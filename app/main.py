@@ -2,19 +2,14 @@
 # -*- coding: utf-8 -*-
 #
 # Auther:   Stanley Huang
-# Project:  mantisanalyzer 1.0
-# Date:     2021-06-03
+# Project:  vulnrep 1.0
+# Date:     2021-06-04
 #
 import os
 import sys
 
 from jira import JIRA
-from util.util_text_file import get_lines
-
-def output_text(filepath, content):
-    fp = open(filepath, "a")    # 開啟檔案
-    fp.write(content)           # 寫入 This is a testing! 到檔案
-    fp.close()                  # 關閉檔案
+from util.util_text_file import get_lines, flush_text
 
 ### get argv[1] as input
 if len(sys.argv) >=4:
@@ -31,6 +26,7 @@ jira = JIRA(basic_auth=(username, password), options={'server': server})
 
 issue = jira.issue(jira_id)
 summary = issue.fields.summary         # 'Field level security permissions'
-# votes = issue.fields.votes.votes       # 440 (at least)
+votes = issue.fields.votes.votes       # 440 (at least)
 print(summary)
+print(votes)
 
