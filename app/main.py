@@ -8,46 +8,25 @@
 import os
 import sys
 
-from jira import JIRA
+from qjira import normalize_ticket
 from util.util_text_file import get_lines, flush_text
-
-def extract_str_in_link(content):
-    import re
-    # regex to extract required strings
-    reg_str = r"\[(.*?)\]"
-    in_bracket = re.search(reg_str, content)
-    if in_bracket:
-        res = in_bracket.group(1).split('|')
-        if not res or len(res)<=2:
-            return '', '', content
-        return res[0], res[len(res)-1], content[in_bracket.end():]
-    return '', '', content
-
-def parse_salesforce_link(content):
-    name, link, others = extract_str_in_link(content)
-    return name, link, others
     
 
 ### get argv[1] as input
-if len(sys.argv) >=4:
-    username = sys.argv[1]
-    password = sys.argv[2]
-    jira_id = sys.argv[3]
+if len(sys.argv) >= 2:
+    jira_id = sys.argv[1]
 else:
-    print('usage: python main.py [username] [password] [jira id]\n')
+    print('usage: python main.py [jira id]\n')
     quit()
 
 ### the main program
-server = 'https://qnap-jira.qnap.com.tw'
-jira = JIRA(basic_auth=(username, password), options={'server': server})
+# Get environment variables
+jira_url = os.environ.get('jira_url')
+jira_username = os.environ.get('jira_username')
+jira_password = os.environ.get('jira_password')
 
-issue = jira.issue(jira_id)
-summary = issue.fields.summary         # 'Field level security permissions'
-votes = issue.fields.votes.votes       # 440 (at least)
-description = issue.fields.description
-print(summary)
-print(votes)
-name, link, others = parse_salesforce_link(description)
-if len(name) > 0 and len(link) > 0:
-    print('--- Correct Salesforce link [{name}|{link}]'.format(name=name, link=link))
-    issue.update(description = '[{name}|{link}]{others}'.format(name=name, link=link, others=others))
+salesforce_url = os.environ.get('salesforce_url')
+salesforce_username = os.environ.get('salesforce_username')
+salesforce_password = os.environ.get('salesforce_password')
+
+normalize_ticket(jira_url, jira_username, jira_password, jira_id)

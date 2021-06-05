@@ -7,9 +7,19 @@ cd $origin_path
 
 ### Primary variables
 srv_home="/Users/$USER/srv"
-project="vulnrep"
+script_path="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+project="$(basename $(dirname $(dirname $(dirname $script_path))))"
+
+echo '### Primary variables'
+echo 'srv_home: ' $srv_home
+echo 'project: ' $project
 
 ### Environment variables directed from primary ones
 export src=$base_dir/../../../app
 export config=$base_dir/../../../base
 export apphome=$srv_home/$project
+
+echo '### Environment variables directed from primary ones'
+echo 'src: ' $src
+echo 'config: ' $config
+echo 'apphome: ' $apphome

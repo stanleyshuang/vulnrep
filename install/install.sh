@@ -75,4 +75,5 @@ fi
 echo "-- Run the following script ----"
 echo "cd $apphome/"
 echo "source $apphome/venv/bin/activate"
+echo "source ./credential.sh"
 echo "python main.py"
