@@ -8,9 +8,9 @@
 import os
 import sys
 
-from util.qjira import j_get_sf_case_num, j_update_sf_data
-from util.qsalesforce import sf_get_data
-from util.util_text_file import get_lines, flush_text
+from pkg.qjira import j_get_sf_case_num, j_update_sf_data
+from pkg.qsalesforce import sf_get_data
+from pkg.util.util_text_file import get_lines, flush_text
     
 
 ### get argv[1] as input

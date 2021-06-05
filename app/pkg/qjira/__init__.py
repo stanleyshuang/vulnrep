@@ -7,7 +7,7 @@
 #
 from datetime import datetime
 from jira import JIRA
-from ..util_datetime import pick_n_days_after, utc_to_local_str
+from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 
 def extract_str_in_link(content):
     import re
@@ -89,7 +89,6 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     print('--- Release Deadline              {deadline_str}'.format(deadline_str=deadline_str))
     print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-    '''
     for fid in issue.raw['fields']:
         if type(issue.raw['fields'][fid]) is list:
             print('{fid} is a list'.format(fid=fid))
@@ -97,4 +96,3 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
             print('{fid} is a dict'.format(fid=fid))
         elif issue.raw['fields'][fid]:
             print('{fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
-    '''
