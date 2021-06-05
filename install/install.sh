@@ -60,6 +60,8 @@ if ! [ -d "$apphome/venv" ]; then
         python3 -m venv $apphome/venv
   echo "source $apphome/venv/bin/activate"
         source $apphome/venv/bin/activate
+  echo "pip install --upgrade pip"
+        pip install --upgrade pip
   if [ -f "$env/config/requirements.txt" ]; then
     echo "pip install -r $env/config/requirements.txt"
           pip install -r $env/config/requirements.txt

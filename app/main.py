@@ -9,6 +9,7 @@ import os
 import sys
 
 from qjira import normalize_ticket
+from qsalesforce import get_data
 from util.util_text_file import get_lines, flush_text
     
 
@@ -28,5 +29,8 @@ jira_password = os.environ.get('jira_password')
 salesforce_url = os.environ.get('salesforce_url')
 salesforce_username = os.environ.get('salesforce_username')
 salesforce_password = os.environ.get('salesforce_password')
+salesforce_orgid = os.environ.get('salesforce_orgid')
 
 normalize_ticket(jira_url, jira_username, jira_password, jira_id)
+
+get_data(salesforce_orgid, salesforce_username, salesforce_password)
