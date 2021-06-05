@@ -41,36 +41,37 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
-    ### Update Salseforce link
     summary = issue.fields.summary
+    print('--- Jira [{jira_id}]{summary}'.format(jira_id=jira_id, summary=summary))
+
+    ### Update Salseforce link, researcher information
     description = issue.fields.description
     b_need_update, case_num, link, others = parse_salesforce_link(description)
-    print('--- Jira [{jira_id}]{summary}'.format(jira_id=jira_id, summary=summary))
-    if b_need_update:
+    email_index = description.find(email)
+    researcher_name_index = description.find(researcher_name)
+    if b_need_update or not email_index or not researcher_name_index:
         print('--- Correct Salesforce link [{case_num}|{link}]'.format(case_num=case_num, link=link))
+        print('--- Case Number: {case_num}, Researcher: {researcher_name} [{email}]'.format(
+            case_num=case_num,
+            researcher_name=researcher_name,
+            email=email))
         issue.update(description = '[{case_num}|{link}]\n[{researcher_name}] [{email}]\n{others}'.format(
             case_num=case_num, 
             link=link,
             researcher_name=researcher_name,
             email=email,
             others=others))
-    print('--- Case Number: {case_num}, Researcher: {researcher_name} [{email}]'.format(
-        case_num=case_num,
-        researcher_name=researcher_name,
-        email=email))
 
     ### Add 'vulnerability_report' in components
-    print('--- Components')
     b_vulnerability_report = False
     existingComponents = []
     for component in issue.fields.components:
         existingComponents.append({"name" : component.name})
-        print('        {component_name}'.format(component_name=component.name))
         if component.name=='vulnerability_report':
             b_vulnerability_report = True
     if not b_vulnerability_report:
         existingComponents.append({"name" : 'vulnerability_report'})
-        print('        vulnerability_report')
+        print('--- Components: vulnerability_report')
         issue.update(fields={"components": existingComponents})
 
     ### Update date
@@ -82,13 +83,16 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     # Vulnerability Reporting Date: customfield_16400
     # Release Deadline:             customfield_16401
     # Finish ETA:                   customfield_11504
-    issue.update(fields={"customfield_16400": created_date_str})
-    issue.update(fields={"customfield_16401": deadline_str})
-    issue.update(fields={"customfield_11504": deadline_str})
-    print('--- Vulnerability Reporting Date  {created_date_str}'.format(created_date_str=created_date_str))
-    print('--- Release Deadline              {deadline_str}'.format(deadline_str=deadline_str))
-    print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
-
+    if issue.raw['fields']["customfield_16400"] != created_date_str:
+        issue.update(fields={"customfield_16400": created_date_str})
+        print('--- Vulnerability Reporting Date  {created_date_str}'.format(created_date_str=created_date_str))
+    if issue.raw['fields']["customfield_16401"] != deadline_str:
+        issue.update(fields={"customfield_16401": deadline_str})
+        print('--- Release Deadline              {deadline_str}'.format(deadline_str=deadline_str))
+    if issue.raw['fields']["customfield_11504"] != deadline_str:
+        issue.update(fields={"customfield_11504": deadline_str})
+        print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
+    '''
     for fid in issue.raw['fields']:
         if type(issue.raw['fields'][fid]) is list:
             print('{fid} is a list'.format(fid=fid))
@@ -96,3 +100,4 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
             print('{fid} is a dict'.format(fid=fid))
         elif issue.raw['fields'][fid]:
             print('{fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
+    '''

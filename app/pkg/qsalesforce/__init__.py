@@ -13,11 +13,11 @@ def sf_get_data(orgid, username, password, case_num):
     # print(SOQL)
     data = sf.query(SOQL)
     for d in data['records']:
-        sf_id=d['CaseNumber']
+        sf_case_num=d['CaseNumber']
         created_date=d['CreatedDate']
         contact_id=d['ContactId']
         contact = sf.Contact.get(contact_id)
         email=contact['Email']
         name=contact['Name']
-        return sf_id, created_date, email, name
+        return sf_case_num, created_date, email, name
     return None, None, None, None
