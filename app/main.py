@@ -8,8 +8,8 @@
 import os
 import sys
 
-from qjira import normalize_ticket
-from qsalesforce import get_data
+from qjira import j_get_sf_case, j_normalize_ticket
+from qsalesforce import sf_get_data
 from util.util_text_file import get_lines, flush_text
     
 
@@ -31,6 +31,7 @@ salesforce_username = os.environ.get('salesforce_username')
 salesforce_password = os.environ.get('salesforce_password')
 salesforce_orgid = os.environ.get('salesforce_orgid')
 
-normalize_ticket(jira_url, jira_username, jira_password, jira_id)
-
-get_data(salesforce_orgid, salesforce_username, salesforce_password)
+j_normalize_ticket(jira_url, jira_username, jira_password, jira_id)
+sf_case_num = j_get_sf_case(jira_url, jira_username, jira_password, jira_id)
+if sf_case_num:
+    sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
