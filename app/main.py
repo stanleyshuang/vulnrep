@@ -34,4 +34,5 @@ salesforce_orgid = os.environ.get('salesforce_orgid')
 sf_case_num = j_get_sf_case_num(jira_url, jira_username, jira_password, jira_id)
 if sf_case_num:
     case_num, created_date, email, name = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
-    j_update_sf_data(jira_url, jira_username, jira_password, jira_id, case_num, created_date, email, name)
+    if case_num:
+        j_update_sf_data(jira_url, jira_username, jira_password, jira_id, case_num, created_date, email, name)

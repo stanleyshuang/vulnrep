@@ -20,3 +20,4 @@ def sf_get_data(orgid, username, password, case_num):
         email=contact['Email']
         name=contact['Name']
         return sf_id, created_date, email, name
+    return None, None, None, None
