@@ -49,7 +49,7 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     b_need_update, case_num, link, others = parse_salesforce_link(description)
     email_index = description.find(email)
     researcher_name_index = description.find(researcher_name)
-    if b_need_update or not email_index or not researcher_name_index:
+    if b_need_update or email_index<0 or researcher_name_index<0:
         print('--- Correct Salesforce link [{case_num}|{link}]'.format(case_num=case_num, link=link))
         print('--- Case Number: {case_num}, Researcher: {researcher_name} [{email}]'.format(
             case_num=case_num,
