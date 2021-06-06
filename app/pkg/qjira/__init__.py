@@ -5,6 +5,7 @@
 # Project:  vulnrep 1.0
 # Date:     2021-06-05
 #
+import json
 from datetime import datetime
 from jira import JIRA
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
@@ -37,7 +38,7 @@ def j_get_sf_case_num(server, username, password, jira_id):
         return name.strip()
     return None
 
-def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, email, researcher_name):
+def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_date, researcher_email, researcher_name):
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
@@ -47,19 +48,19 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     ### Update Salseforce link, researcher information
     description = issue.fields.description
     b_need_update, case_num, link, others = parse_salesforce_link(description)
-    email_index = description.find(email)
+    researcher_email_index = description.find(researcher_email)
     researcher_name_index = description.find(researcher_name)
-    if b_need_update or email_index<0 or researcher_name_index<0:
+    if b_need_update or researcher_email_index<0 or researcher_name_index<0:
         print('--- Correct Salesforce link [{case_num}|{link}]'.format(case_num=case_num, link=link))
-        print('--- Case Number: {case_num}, Researcher: {researcher_name} [{email}]'.format(
+        print('--- Case Number: {case_num}, Researcher: {researcher_name} [{researcher_email}]'.format(
             case_num=case_num,
             researcher_name=researcher_name,
-            email=email))
-        issue.update(description = '[{case_num}|{link}]\n[{researcher_name}] [{email}]\n{others}'.format(
+            researcher_email=researcher_email))
+        issue.update(description = '[{case_num}|{link}]\n[{researcher_name}] [{researcher_email}]\n{others}'.format(
             case_num=case_num, 
             link=link,
             researcher_name=researcher_name,
-            email=email,
+            researcher_email=researcher_email,
             others=others))
 
     ### Add 'vulnerability_report' in components
@@ -92,6 +93,37 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     if issue.raw['fields']["customfield_11504"] != deadline_str:
         issue.update(fields={"customfield_11504": deadline_str})
         print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
+
+def j_update_status(server, username, password, jira_id, 
+                    sf_case_num, created_date, researcher_email, researcher_name,
+                    analysis_case):
+    jira = JIRA(basic_auth=(username, password), options={'server': server})
+    issue = jira.issue(jira_id)
+
+    ### Salseforce case_num, link, researcher information
+    description = issue.fields.description
+    b_need_update, case_num, link, others = parse_salesforce_link(description)
+
+    ### Update date
+    created_datetime = datetime.strptime(created_date, '%Y-%m-%dT%H:%M:%S.000+0000')
+    deadline = pick_n_days_after(created_datetime, 60)
+    created_date_str = utc_to_local_str(created_datetime, format='%Y-%m-%d')
+    deadline_str = utc_to_local_str(deadline, format='%Y-%m-%d')
+
+    ### Update Status
+    status_dict = {}
+    status_dict['sf_case_num'] = case_num
+    status_dict['sf_link'] = link
+    status_dict['researcher_email'] = researcher_email
+    status_dict['researcher_name'] = researcher_name
+    status_dict['created_date'] = created_date_str
+    status_dict['deadline'] = deadline_str
+    status_dict['analysis'] = analysis_case
+    status_json = json.dumps(status_dict)
+
+    # Status Update:                customfield_13600
+    issue.update(fields={"customfield_13600": status_json})
+
 
 def j_find_analysis(server, username, password, jira_id):
     jira = JIRA(basic_auth=(username, password), options={'server': server})
