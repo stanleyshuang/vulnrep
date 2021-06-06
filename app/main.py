@@ -8,7 +8,7 @@
 import os
 import sys
 
-from pkg.qjira import j_get_sf_case_num, j_update_sf_data
+from pkg.qjira import j_get_sf_case_num, j_update_sf_data, j_dump_data, j_find_analysis
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
     
@@ -17,8 +17,13 @@ from pkg.util.util_text_file import get_lines, flush_text
 if len(sys.argv) >= 2:
     jira_id = sys.argv[1]
 else:
-    print('usage: python main.py [jira id]\n')
+    print('usage: python main.py jira_id [cmd]\n')
     quit()
+
+if len(sys.argv) >= 3:
+    cmd = sys.argv[2]
+else:
+    cmd = 'standard'
 
 ### the main program
 # Get environment variables
@@ -31,8 +36,16 @@ salesforce_username = os.environ.get('salesforce_username')
 salesforce_password = os.environ.get('salesforce_password')
 salesforce_orgid = os.environ.get('salesforce_orgid')
 
-sf_case_num = j_get_sf_case_num(jira_url, jira_username, jira_password, jira_id)
-if sf_case_num:
-    case_num, created_date, email, name = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
-    if case_num:
-        j_update_sf_data(jira_url, jira_username, jira_password, jira_id, case_num, created_date, email, name)
+if cmd=='standard':
+    sf_case_num = j_get_sf_case_num(jira_url, jira_username, jira_password, jira_id)
+    if sf_case_num:
+        case_num, created_date, email, name = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
+        if case_num:
+            j_update_sf_data(jira_url, jira_username, jira_password, jira_id, case_num, created_date, email, name)
+elif cmd=='test':
+    pass
+
+if cmd=='verbose':
+    j_dump_data(jira_url, jira_username, jira_password, jira_id)
+    j_find_analysis(jira_url, jira_username, jira_password, jira_id)
+

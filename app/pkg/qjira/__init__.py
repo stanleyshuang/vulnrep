@@ -92,12 +92,55 @@ def j_update_sf_data(server, username, password, jira_id, sf_id, created_date, e
     if issue.raw['fields']["customfield_11504"] != deadline_str:
         issue.update(fields={"customfield_11504": deadline_str})
         print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
-    '''
+
+def j_find_analysis(server, username, password, jira_id):
+    jira = JIRA(basic_auth=(username, password), options={'server': server})
+    issue = jira.issue(jira_id)
+
+    b_analysis_done = False
+    analysis_case = []
+    comments = issue.fields.comment.comments
+    for comment in comments:
+        cid = comment.id
+        author = comment.author.displayName
+        time = comment.created
+        body = comment.body
+        lines = body.split('\n')
+        for line in lines:
+            security_idx = line.find('[Security]')
+            v1_idx = line.find('[V1]')
+            v2_idx = line.find('[V2]')
+            v3_idx = line.find('[V3]')
+            v4_idx = line.find('[V4]')
+            v5_idx = line.find('[V5]')
+            if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
+                print('--- Analysis is DONE {line}'.format(line=line))
+                b_analysis_done = True
+                analysis_case.append(line)
+    if not b_analysis_done:
+        print('--- Analysis is on going')
+    return b_analysis_done, analysis_case
+
+def j_dump_data(server, username, password, jira_id):
+    jira = JIRA(basic_auth=(username, password), options={'server': server})
+    issue = jira.issue(jira_id)
+
     for fid in issue.raw['fields']:
         if type(issue.raw['fields'][fid]) is list:
             print('{fid} is a list'.format(fid=fid))
         elif type(issue.raw['fields'][fid]) is dict:
             print('{fid} is a dict'.format(fid=fid))
+            if fid=='comment':
+                for n, v in enumerate(issue.raw['fields'][fid]):
+                    print('    - {n}:{v}'.format(n=n, v=v))
         elif issue.raw['fields'][fid]:
             print('{fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
-    '''
+
+    print('comment')
+    comments = issue.fields.comment.comments
+    for comment in comments:
+        cid = comment.id
+        author = comment.author.displayName
+        time = comment.created
+        body = comment.body.replace("\r", " ").replace("\n", " ")
+        print('    - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
