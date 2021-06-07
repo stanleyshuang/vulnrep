@@ -10,7 +10,6 @@ from simple_salesforce import Salesforce
 def sf_get_data(orgid, username, password, case_num):
     sf = Salesforce(password=password, username=username, organizationId=orgid)
     SOQL = "SELECT CaseNumber, CreatedDate, ContactId FROM Case WHERE CaseNumber='{case_num}'".format(case_num=case_num)
-    # print(SOQL)
     data = sf.query(SOQL)
     for d in data['records']:
         sf_case_num=d['CaseNumber']

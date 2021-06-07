@@ -29,6 +29,7 @@ def parse_salesforce_link(content):
     return b_need_update, name, link, others
 
 def j_get_sf_case_num(server, username, password, jira_id):
+    print('Get SF Case Number')
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
@@ -39,6 +40,7 @@ def j_get_sf_case_num(server, username, password, jira_id):
     return None
 
 def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_date, researcher_email, researcher_name):
+    print('Update SF Data')
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
@@ -52,7 +54,7 @@ def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_d
     researcher_name_index = description.find(researcher_name)
     if b_need_update or researcher_email_index<0 or researcher_name_index<0:
         print('--- Correct Salesforce link [{case_num}|{link}]'.format(case_num=case_num, link=link))
-        print('--- Case Number: {case_num}, Researcher: {researcher_name} [{researcher_email}]'.format(
+        print('---         Case Number: {case_num}, Researcher: {researcher_name} [{researcher_email}]'.format(
             case_num=case_num,
             researcher_name=researcher_name,
             researcher_email=researcher_email))
@@ -72,11 +74,10 @@ def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_d
             b_vulnerability_report = True
     if not b_vulnerability_report:
         existingComponents.append({"name" : 'vulnerability_report'})
-        print('--- Components: vulnerability_report')
+        print('--- Add Components: vulnerability_report')
         issue.update(fields={"components": existingComponents})
 
     ### Update date
-    # print('created_date = ' + created_date)
     created_datetime = datetime.strptime(created_date, '%Y-%m-%dT%H:%M:%S.000+0000')
     deadline = pick_n_days_after(created_datetime, 60)
     created_date_str = utc_to_local_str(created_datetime, format='%Y-%m-%d')
@@ -86,17 +87,18 @@ def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_d
     # Finish ETA:                   customfield_11504
     if issue.raw['fields']["customfield_16400"] != created_date_str:
         issue.update(fields={"customfield_16400": created_date_str})
-        print('--- Vulnerability Reporting Date  {created_date_str}'.format(created_date_str=created_date_str))
+        print('--- Update Vulnerability Reporting Date  {created_date_str}'.format(created_date_str=created_date_str))
     if issue.raw['fields']["customfield_16401"] != deadline_str:
         issue.update(fields={"customfield_16401": deadline_str})
-        print('--- Release Deadline              {deadline_str}'.format(deadline_str=deadline_str))
+        print('--- Update Release Deadline              {deadline_str}'.format(deadline_str=deadline_str))
     if issue.raw['fields']["customfield_11504"] != deadline_str:
         issue.update(fields={"customfield_11504": deadline_str})
-        print('--- Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
+        print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
 def j_update_status(server, username, password, jira_id, 
                     sf_case_num, created_date, researcher_email, researcher_name,
                     analysis_case):
+    print('Update Status')
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
@@ -126,6 +128,7 @@ def j_update_status(server, username, password, jira_id,
 
 
 def j_find_analysis(server, username, password, jira_id):
+    print('Find analysis result')
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
@@ -154,25 +157,26 @@ def j_find_analysis(server, username, password, jira_id):
     return b_analysis_done, analysis_case
 
 def j_dump_data(server, username, password, jira_id):
+    print('Dump Data')
     jira = JIRA(basic_auth=(username, password), options={'server': server})
     issue = jira.issue(jira_id)
 
     for fid in issue.raw['fields']:
         if type(issue.raw['fields'][fid]) is list:
-            print('{fid} is a list'.format(fid=fid))
+            print('--- {fid} is a list'.format(fid=fid))
         elif type(issue.raw['fields'][fid]) is dict:
-            print('{fid} is a dict'.format(fid=fid))
+            print('--- {fid} is a dict'.format(fid=fid))
             if fid=='comment':
                 for n, v in enumerate(issue.raw['fields'][fid]):
-                    print('    - {n}:{v}'.format(n=n, v=v))
+                    print('        - {n}:{v}'.format(n=n, v=v))
         elif issue.raw['fields'][fid]:
-            print('{fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
+            print('--- {fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
 
-    print('comment')
+    print('--- comment')
     comments = issue.fields.comment.comments
     for comment in comments:
         cid = comment.id
         author = comment.author.displayName
         time = comment.created
         body = comment.body.replace("\r", " ").replace("\n", " ")
-        print('    - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
+        print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
