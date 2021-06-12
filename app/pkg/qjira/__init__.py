@@ -72,28 +72,16 @@ def j_update_sf_data(issue, sf_case_num, created_date, researcher_email, researc
         issue.update(fields={"customfield_11504": deadline_str})
         print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-def j_update_status(issue, 
-                    sf_case_num, created_date, researcher_email, researcher_name,
-                    analysis_cases):
+def j_update_status(issue, sf_dict, analysis_cases):
     print('Update Status')
     ### Salseforce case_num, link, researcher information
     description = issue.fields.description
     b_need_update, case_num, link, others = parse_salesforce_link(description)
 
-    ### Update date
-    created_datetime = datetime.strptime(created_date, '%Y-%m-%dT%H:%M:%S.000+0000')
-    deadline = pick_n_days_after(created_datetime, 60)
-    created_date_str = utc_to_local_str(created_datetime, format='%Y-%m-%d')
-    deadline_str = utc_to_local_str(deadline, format='%Y-%m-%d')
-
     ### Update Status
     status_dict = {}
-    status_dict['sf_case_num'] = case_num
+    status_dict['sf'] = sf_dict
     status_dict['sf_link'] = link
-    status_dict['researcher_email'] = researcher_email
-    status_dict['researcher_name'] = researcher_name
-    status_dict['created_date'] = created_date_str
-    status_dict['deadline'] = deadline_str
     status_dict['analysis'] = analysis_cases
     status_json = json.dumps(status_dict)
 

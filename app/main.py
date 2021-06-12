@@ -9,7 +9,8 @@ import os
 import sys
 from jira import JIRA
 
-from pkg.qjira import j_get_sf_case_num, j_update_sf_data, j_dump_data, j_find_analysis, j_update_status, j_search_blocked_issues
+from pkg.qjira import j_get_sf_case_num, j_update_sf_data, j_dump_data, j_update_status
+from pkg.qjira import j_find_analysis, j_search_blocked_issues
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
 
@@ -46,15 +47,14 @@ if cmd=='standard' or cmd=='verbose' or cmd=='update':
     jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
     b_analyzed, analysis_cases = j_find_analysis(issue)
     b_bug_created, blocked_issues = j_search_blocked_issues(jira, issue)
+
     sf_case_num = j_get_sf_case_num(issue)
     if sf_case_num:
-        case_num, created_date, email, name = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
+        case_num, created_date, email, name, sf_dict = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
         if case_num:
             j_update_sf_data(issue, case_num, created_date, email, name)
             if cmd=='update':
-                j_update_status(issue, 
-                                case_num, created_date, email, name,
-                                analysis_cases)
+                j_update_status(issue, sf_dict, analysis_cases)
 elif cmd=='test':
     pass
 
