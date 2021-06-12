@@ -100,6 +100,30 @@ def j_update_status(issue,
     # Status Update:                customfield_13600
     issue.update(fields={"customfield_13600": status_json})
 
+def j_dump_data(issue):
+    print('Dump Data')
+    for fid in issue.raw['fields']:
+        if type(issue.raw['fields'][fid]) is list:
+            print('--- {fid} is a list'.format(fid=fid))
+            if fid=='issuelinks':
+                for issue_link in issue.raw['fields'][fid]:
+                    print('        - {issue_link}'.format(issue_link=issue_link))
+        elif type(issue.raw['fields'][fid]) is dict:
+            print('--- {fid} is a dict'.format(fid=fid))
+            if fid=='comment':
+                for n, v in enumerate(issue.raw['fields'][fid]):
+                    print('        - {n}:{v}'.format(n=n, v=v))
+        elif issue.raw['fields'][fid]:
+            print('--- {fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
+
+    print('--- comment')
+    comments = issue.fields.comment.comments
+    for comment in comments:
+        cid = comment.id
+        author = comment.author.displayName
+        time = comment.created
+        body = comment.body.replace("\r", " ").replace("\n", " ")
+        print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
 
 def j_find_analysis(issue):
     '''
@@ -128,7 +152,7 @@ def j_find_analysis(issue):
             v4_idx = line.find('[V4]')
             v5_idx = line.find('[V5]')
             if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
-                print('--- Analysis is DONE {line}'.format(line=line))
+                print('--- Analysis is DONE as {line}'.format(line=line))
                 b_analysis_done = True
                 analysis_case = {}
                 analysis_case['summary'] = line
@@ -139,24 +163,18 @@ def j_find_analysis(issue):
         print('--- Analysis is on going')
     return b_analysis_done, analysis_cases
 
-def j_dump_data(issue):
-    print('Dump Data')
-    for fid in issue.raw['fields']:
-        if type(issue.raw['fields'][fid]) is list:
-            print('--- {fid} is a list'.format(fid=fid))
-        elif type(issue.raw['fields'][fid]) is dict:
-            print('--- {fid} is a dict'.format(fid=fid))
-            if fid=='comment':
-                for n, v in enumerate(issue.raw['fields'][fid]):
-                    print('        - {n}:{v}'.format(n=n, v=v))
-        elif issue.raw['fields'][fid]:
-            print('--- {fid} {name}'.format(fid=fid, name=issue.raw['fields'][fid]))
-
-    print('--- comment')
-    comments = issue.fields.comment.comments
-    for comment in comments:
-        cid = comment.id
-        author = comment.author.displayName
-        time = comment.created
-        body = comment.body.replace("\r", " ").replace("\n", " ")
-        print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
+def j_search_blocked_issues(jira, issue):
+    print('Searching Blocked Issue(s)')
+    b_bug_ticket_created = False
+    issues = []
+    if 'issuelinks' in issue.raw['fields']:
+        for issue_link in issue.raw['fields']['issuelinks']:
+            if issue_link['type']['name'] == 'Blocks':
+                blocking_issue = jira.issue(issue_link['inwardIssue']['key'])
+                if blocking_issue:
+                    print('--- Bug ticket is CREATED at {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
+                    b_bug_ticket_created = True
+                    issues.append(blocking_issue)
+    if not b_bug_ticket_created:
+        print('--- Bug ticket has not been created yet')
+    return b_bug_ticket_created, issues

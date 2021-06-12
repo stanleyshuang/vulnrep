@@ -9,14 +9,14 @@ import os
 import sys
 from jira import JIRA
 
-from pkg.qjira import j_get_sf_case_num, j_update_sf_data, j_dump_data, j_find_analysis, j_update_status
+from pkg.qjira import j_get_sf_case_num, j_update_sf_data, j_dump_data, j_find_analysis, j_update_status, j_search_blocked_issues
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
 
 
 def get_jira_issue(server, username, password, jira_id):
     jira = JIRA(basic_auth=(username, password), options={'server': server})
-    return jira.issue(jira_id)
+    return jira, jira.issue(jira_id)
     
 
 ### get argv[1] as input
@@ -43,8 +43,9 @@ salesforce_password = os.environ.get('salesforce_password')
 salesforce_orgid = os.environ.get('salesforce_orgid')
 
 if cmd=='standard' or cmd=='verbose' or cmd=='update':
-    issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
-    b_find, analysis_cases = j_find_analysis(issue)
+    jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
+    b_analyzed, analysis_cases = j_find_analysis(issue)
+    b_bug_created, blocked_issues = j_search_blocked_issues(jira, issue)
     sf_case_num = j_get_sf_case_num(issue)
     if sf_case_num:
         case_num, created_date, email, name = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
@@ -58,6 +59,6 @@ elif cmd=='test':
     pass
 
 if cmd=='verbose':
-    issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
+    jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
     j_dump_data(issue)
 
