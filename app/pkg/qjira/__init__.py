@@ -7,43 +7,20 @@
 #
 import json
 from datetime import datetime
-from jira import JIRA
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
+from .function import parse_salesforce_link
 
-def extract_str_in_link(content):
-    import re
-    # regex to extract required strings
-    reg_str = r"\[(.*?)\]"
-    in_bracket = re.search(reg_str, content)
-    if in_bracket:
-        res = in_bracket.group(1).split('|')
-        if not res or len(res)<2:
-            return False, '', '', content
-        if len(res)==2:
-            return False, res[0], res[1], content[in_bracket.end():]
-        return True, res[0], res[len(res)-1], content[in_bracket.end():]
-    return False, '', '', content
-
-def parse_salesforce_link(content):
-    b_need_update, name, link, others = extract_str_in_link(content)
-    return b_need_update, name, link, others
-
-def j_get_sf_case_num(server, username, password, jira_id):
+def j_get_sf_case_num(issue):
     print('Get SF Case Number')
-    jira = JIRA(basic_auth=(username, password), options={'server': server})
-    issue = jira.issue(jira_id)
-
     description = issue.fields.description
     b_need_update, name, link, others = parse_salesforce_link(description)
     if len(name):
         return name.strip()
     return None
 
-def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_date, researcher_email, researcher_name):
+def j_update_sf_data(issue, sf_case_num, created_date, researcher_email, researcher_name):
     print('Update SF Data')
-    jira = JIRA(basic_auth=(username, password), options={'server': server})
-    issue = jira.issue(jira_id)
-
+    jira_id = issue.id
     summary = issue.fields.summary
     print('--- Jira [{jira_id}]{summary}'.format(jira_id=jira_id, summary=summary))
 
@@ -95,13 +72,10 @@ def j_update_sf_data(server, username, password, jira_id, sf_case_num, created_d
         issue.update(fields={"customfield_11504": deadline_str})
         print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-def j_update_status(server, username, password, jira_id, 
+def j_update_status(issue, 
                     sf_case_num, created_date, researcher_email, researcher_name,
-                    analysis_case):
+                    analysis_cases):
     print('Update Status')
-    jira = JIRA(basic_auth=(username, password), options={'server': server})
-    issue = jira.issue(jira_id)
-
     ### Salseforce case_num, link, researcher information
     description = issue.fields.description
     b_need_update, case_num, link, others = parse_salesforce_link(description)
@@ -120,20 +94,25 @@ def j_update_status(server, username, password, jira_id,
     status_dict['researcher_name'] = researcher_name
     status_dict['created_date'] = created_date_str
     status_dict['deadline'] = deadline_str
-    status_dict['analysis'] = analysis_case
+    status_dict['analysis'] = analysis_cases
     status_json = json.dumps(status_dict)
 
     # Status Update:                customfield_13600
     issue.update(fields={"customfield_13600": status_json})
 
 
-def j_find_analysis(server, username, password, jira_id):
+def j_find_analysis(issue):
+    '''
+    b_analysis_done: analysis done or not
+    analysis_cases: {
+                        'summary': analysis summary,
+                        'author': analyst who gave the comment
+                        'created_date': date time in format '2021-05-13T22:10:45.000+0800'
+                    }
+    '''
     print('Find analysis result')
-    jira = JIRA(basic_auth=(username, password), options={'server': server})
-    issue = jira.issue(jira_id)
-
     b_analysis_done = False
-    analysis_case = []
+    analysis_cases = []
     comments = issue.fields.comment.comments
     for comment in comments:
         cid = comment.id
@@ -151,16 +130,17 @@ def j_find_analysis(server, username, password, jira_id):
             if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
                 print('--- Analysis is DONE {line}'.format(line=line))
                 b_analysis_done = True
-                analysis_case.append(line)
+                analysis_case = {}
+                analysis_case['summary'] = line
+                analysis_case['author'] = author
+                analysis_case['created_date'] = time
+                analysis_cases.append(analysis_case)
     if not b_analysis_done:
         print('--- Analysis is on going')
-    return b_analysis_done, analysis_case
+    return b_analysis_done, analysis_cases
 
-def j_dump_data(server, username, password, jira_id):
+def j_dump_data(issue):
     print('Dump Data')
-    jira = JIRA(basic_auth=(username, password), options={'server': server})
-    issue = jira.issue(jira_id)
-
     for fid in issue.raw['fields']:
         if type(issue.raw['fields'][fid]) is list:
             print('--- {fid} is a list'.format(fid=fid))
