@@ -9,7 +9,7 @@ import os
 import sys
 from jira import JIRA
 
-from pkg.qjira.issue import c_analysis_task
+from pkg.qjira.issue import analysis_task
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
 
@@ -44,21 +44,21 @@ salesforce_orgid = os.environ.get('salesforce_orgid')
 
 if cmd=='standard' or cmd=='verbose' or cmd=='update':
     jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
-    analysis_task = c_analysis_task(jira, issue)
+    ana_task = analysis_task(jira, issue)
 
-    b_analyzed, analysis_cases = analysis_task.find_analysis()
-    b_bug_created, blocked_issues = analysis_task.search_blocked_issues()
+    b_analyzed, analysis_cases = ana_task.search_result()
+    b_bug_created, blocked_issues = ana_task.search_blocked()
 
-    sf_case_num = analysis_task.get_sf_case_num()
+    sf_case_num = ana_task.get_sf_case_num()
     if sf_case_num:
         case_num, created_date, email, name, sf_dict = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
         if case_num:
-            analysis_task.update_sf_data(case_num, created_date, email, name)
+            ana_task.set_sf_data(case_num, created_date, email, name)
             if cmd=='update':
-                analysis_task.update_status(sf_dict, analysis_cases)
+                ana_task.set_status(sf_dict, analysis_cases)
 elif cmd=='test':
     pass
 
 if cmd=='verbose':
-    analysis_task.dump()
+    ana_task.dump()
 

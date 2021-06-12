@@ -11,20 +11,17 @@ from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue
 from .function import parse_salesforce_link
 
-class c_analysis_task(i_issue):
+class analysis_task(i_issue):
     '''
     Jira task for vulnerabilty analysis
     '''
     def __init__(self, jira, issue):
-        super(c_analysis_task, self).__init__(jira, issue)
+        super(analysis_task, self).__init__(jira, issue)
 
     def get(self):
         return (False, u'', 'N/A', 'N/A')
         
     def set(self):
-        pass
-        
-    def disable(self):
         pass
 
     def get_sf_case_num(self):
@@ -35,7 +32,7 @@ class c_analysis_task(i_issue):
             return name.strip()
         return None
 
-    def update_sf_data(self, sf_case_num, created_date, researcher_email, researcher_name):
+    def set_sf_data(self, sf_case_num, created_date, researcher_email, researcher_name):
         print('Update SF Data')
         jira_id = self.issue.id
         summary = self.issue.fields.summary
@@ -89,7 +86,7 @@ class c_analysis_task(i_issue):
             self.issue.update(fields={"customfield_11504": deadline_str})
             print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-    def update_status(self, sf_dict, analysis_cases):
+    def set_status(self, sf_dict, analysis_cases):
         print('Update Status')
         ### Salseforce case_num, link, researcher information
         description = self.issue.fields.description
@@ -105,7 +102,7 @@ class c_analysis_task(i_issue):
         # Status Update:                customfield_13600
         self.issue.update(fields={"customfield_13600": status_json})
 
-    def find_analysis(self):
+    def search_result(self):
         '''
         b_analysis_done: analysis done or not
         analysis_cases: {
@@ -142,5 +139,3 @@ class c_analysis_task(i_issue):
         if not b_analysis_done:
             print('--- Analysis is on going')
         return b_analysis_done, analysis_cases
-
-

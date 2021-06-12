@@ -22,10 +22,6 @@ class i_issue():
     @abc.abstractmethod
     def set(self, *args, **kwargs):
         print('Set', args, kwargs)
-        
-    @abc.abstractmethod
-    def disable(self):
-        print('Disable..')
 
     @abc.abstractmethod
     def dump(self):
@@ -52,8 +48,9 @@ class i_issue():
             time = comment.created
             body = comment.body.replace("\r", " ").replace("\n", " ")
             print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
-
-    def search_blocked_issues(self):
+        
+    @abc.abstractmethod
+    def search_blocked(self):
         print('Searching Blocked Issue(s)')
         b_bug_ticket_created = False
         issues = []
