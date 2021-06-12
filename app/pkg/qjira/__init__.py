@@ -169,7 +169,7 @@ def j_search_blocked_issues(jira, issue):
     issues = []
     if 'issuelinks' in issue.raw['fields']:
         for issue_link in issue.raw['fields']['issuelinks']:
-            if issue_link['type']['name'] == 'Blocks':
+            if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
                 blocking_issue = jira.issue(issue_link['inwardIssue']['key'])
                 if blocking_issue:
                     print('--- Bug ticket is CREATED at {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
