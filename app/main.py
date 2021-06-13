@@ -38,7 +38,7 @@ func = 'analysis'
 for idx in range(1, len(sys.argv)):
     if sys.argv[idx] in ['--standard', '--update', '--verbose', '--test']:
         cmd = sys.argv[idx][2:]
-    if sys.argv[idx] in ['standard', 'update', 'verbose', 'test']:
+    elif sys.argv[idx] in ['standard', 'update', 'verbose', 'test']:
         cmd = sys.argv[idx]
     elif sys.argv[idx] in ['--analysis', '--bug_fix']:
         func = sys.argv[idx][2:]
