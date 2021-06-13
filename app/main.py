@@ -10,7 +10,7 @@ import sys
 from jira import JIRA
 
 from pkg.qjira.task import analysis_task
-from pkg.qjira.bug import vuln_bug
+from pkg.qjira.bug import vuln_bug, app_release_process
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
 
@@ -73,6 +73,11 @@ if func=='bug_fix':
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
         bug = vuln_bug(jira, issue)
         bug.search_blocking()
+        b_solved, unsolved_counts = bug.resolved()
+        if b_solved:
+            print('The issue is solved')
+        else:
+            print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
 else:
     # func == 'analysis'
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
@@ -80,6 +85,11 @@ else:
 
         b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
         b_bug_created, blocked_issues = ana_task.search_blocked()
+        b_solved, unsolved_counts = ana_task.resolved()
+        if b_solved:
+            print('The issue is solved')
+        else:
+            print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
 
         sf_case_num = ana_task.get_sf_case_num()
         if sf_case_num:
@@ -90,7 +100,12 @@ else:
                     ana_task.set_status(sf_data, analysis_phase_data)
 
 if cmd=='test':
-        pass
+    the_issue = app_release_process(jira, issue)
+    b_solved, unsolved_counts = the_issue.resolved()
+    if b_solved:
+        print('The issue is solved')
+    else:
+        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
 
 if cmd=='verbose':
     if func=='bug_fix':

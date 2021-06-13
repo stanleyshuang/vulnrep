@@ -6,6 +6,9 @@
 # Date:     2021-06-05
 #
 import abc
+ 
+def get_issuetype(issue):
+    return issue.fields.issuetype.name
 
 class i_issue():
     __metaclass__ = abc.ABCMeta
@@ -13,13 +16,18 @@ class i_issue():
     def __init__(self, jira, issue):
         self.jira = jira
         self.issue = issue
+
+        self.b_blocked_run = False
         self.b_blocked_exist = False
-        self.b_blocking = False
         self.blocked_issues = []
+
+        self.b_blocking_run = False
+        self.b_blocking = False
         self.blocking_issues = []
         
-    def get_issuetype(self):
-        return self.issue.fields.issuetype.name
+    def get_status(self):
+        # print('get status {key} {status}'.format(key=self.issue.key, status=self.issue.fields.status.name))
+        return self.issue.fields.status.name
         
     @abc.abstractmethod
     def get(self):
@@ -41,7 +49,7 @@ class i_issue():
                         print('        - {issue_link}'.format(issue_link=issue_link))
             elif type(self.issue.raw['fields'][fid]) is dict:
                 print('--- {fid} is a dict'.format(fid=fid))
-                if fid=='comment':
+                if fid in ['comment', 'resolution', 'status']:
                     for n, v in enumerate(self.issue.raw['fields'][fid]):
                         print('        - {n}:{v}'.format(n=n, v=v))
             elif self.issue.raw['fields'][fid]:
@@ -55,10 +63,15 @@ class i_issue():
             time = comment.created
             body = comment.body.replace("\r", " ").replace("\n", " ")
             print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
+        status = self.issue.fields.status.name
+        print('--- status {status}'.format(status=status))
     
     @abc.abstractmethod
     def search_blocked(self):
         print('Searching Blocked Issue(s)')
+        if self.b_blocked_run:
+            return self.b_blocked_exist, self.blocked_issues
+        self.b_blocked_run = True
         self.b_blocked_exist = False
         self.blocked_issues = []
         if 'issuelinks' in self.issue.raw['fields']:
@@ -76,6 +89,9 @@ class i_issue():
     @abc.abstractmethod
     def search_blocking(self):
         print('Searching Blocking Issue(s)')
+        if self.b_blocking_run:
+            return self.b_blocking, self.blocking_issues
+        self.b_blocking_run = True
         self.b_blocking = False
         self.blocking_issues = []
         if 'issuelinks' in self.issue.raw['fields']:
@@ -89,3 +105,11 @@ class i_issue():
         if not self.b_blocking:
             print('--- There is blocking no issue')
         return self.b_blocking, self.blocking_issues
+        
+    @abc.abstractmethod
+    def resolved(self):
+        if self.get_status() == '':
+            return True, 0
+        else:
+            return False, 1
+        

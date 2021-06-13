@@ -8,7 +8,7 @@
 import json
 from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
-from . import i_issue
+from . import i_issue, get_issuetype
 from .function import parse_salesforce_link
 
 class task(i_issue):
@@ -17,7 +17,7 @@ class task(i_issue):
     '''
     def __init__(self, jira, issue):
         super(task, self).__init__(jira, issue)
-        if self.get_issuetype() != 'Task':
+        if get_issuetype(self.issue) != 'Task':
             raise Exception("Jira issuetype mismatch!!")
 
 class analysis_task(task):
@@ -150,4 +150,22 @@ class analysis_task(task):
 
         # Status Update:                customfield_13600
         self.issue.update(fields={"customfield_13600": status_json})
+
+    def resolved(self):
+        from .bug import vuln_bug, app_release_process
+
+        unresolved_counts = 0
+        if not self.b_blocked_run:
+            self.search_blocked()
+
+        ### enumerate blocked issues and find bugs in the anslysis task 
+        for blocked_issue in self.blocked_issues:
+            if get_issuetype(blocked_issue) == 'Bug':
+                the_bug = vuln_bug(self.jira, blocked_issue)
+                b_resolved, the_bug_unresolved_counts = the_bug.resolved()
+                unresolved_counts += the_bug_unresolved_counts
+
+        if unresolved_counts>0:
+            return False, unresolved_counts
+        return True, 0
 
