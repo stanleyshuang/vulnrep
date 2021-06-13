@@ -26,8 +26,48 @@ def usage():
     print('cmd:      one of --standard, --update, --verbose or --test, default value is --standard')
     print('function: one of --analysis or --bugfix, default value is --analysis')
     quit()
-    
 
+def run_arp(jira, issue):
+    the_issue = app_release_process(jira, issue)
+    b_solved, unsolved_counts, unsolved_issues = the_issue.resolved()
+    if b_solved:
+        print('The issue is solved')
+    else:
+        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+
+def run_vuln_bug(jira, issue):
+    bug = vuln_bug(jira, issue)
+    bug.search_blocking()
+    b_solved, unsolved_counts, unsolved_issues = bug.resolved()
+    if b_solved:
+        print('The issue is solved')
+    else:
+        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+
+def run_analyze_task(jira, issue, b_update=False):
+    ana_task = analysis_task(jira, issue)
+
+    b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
+    b_solved, unsolved_counts, unsolved_issues = ana_task.resolved()
+    if b_solved:
+        print('The issue is solved')
+    else:
+        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+
+    unsolved_data = {}
+    unsolved_data['counts'] = unsolved_counts
+    unsolved_data['issues'] = unsolved_issues
+
+    sf_case_num = ana_task.get_sf_case_num()
+    if sf_case_num:
+        case_num, created_date, email, name, sf_data = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
+        if case_num:
+            ana_task.set_sf_data(case_num, created_date, email, name)
+            if b_update:
+                ana_task.set_status(sf_data, 
+                                    analysis_phase_data,
+                                    unsolved_data)
+    
 if len(sys.argv) == 1:
     usage()
 
@@ -36,9 +76,9 @@ jira_id = ''
 cmd = 'standard'
 func = 'analysis'
 for idx in range(1, len(sys.argv)):
-    if sys.argv[idx] in ['--standard', '--update', '--verbose', '--test']:
+    if sys.argv[idx] in ['--standard', '--update', '--verbose', '--test', '--batch']:
         cmd = sys.argv[idx][2:]
-    elif sys.argv[idx] in ['standard', 'update', 'verbose', 'test']:
+    elif sys.argv[idx] in ['standard', 'update', 'verbose', 'test', 'batch']:
         cmd = sys.argv[idx]
     elif sys.argv[idx] in ['--analysis', '--bugfix']:
         func = sys.argv[idx][2:]
@@ -46,9 +86,6 @@ for idx in range(1, len(sys.argv)):
         func = sys.argv[idx]
     else:
         jira_id = sys.argv[idx]
-
-if jira_id == '':
-    usage()
 
 ### the main program
 # Get environment variables
@@ -61,7 +98,13 @@ salesforce_username = os.environ.get('salesforce_username')
 salesforce_password = os.environ.get('salesforce_password')
 salesforce_orgid = os.environ.get('salesforce_orgid')
 
-jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
+if cmd=='batch':
+    jira = JIRA(basic_auth=(jira_username, jira_password), options={'server': jira_url})
+    for an_issue in jira.search_issues('project = INTSI000 AND type = Task AND component = vulnerability_report ORDER BY key ASC'):
+        run_analyze_task(jira, an_issue, b_update=True)
+    quit()
+else:
+    jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
 
 print('Jira Issue Running..')
 print('--')
@@ -71,46 +114,14 @@ print('Jira:     {jira_id}'.format(jira_id=jira_id))
 
 if func=='bugfix':
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
-        bug = vuln_bug(jira, issue)
-        bug.search_blocking()
-        b_solved, unsolved_counts = bug.resolved()
-        if b_solved:
-            print('The issue is solved')
-        else:
-            print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+        run_vuln_bug(jira, issue)
 else:
     # func == 'analysis'
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
-        ana_task = analysis_task(jira, issue)
-
-        b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
-        b_bugfix_phase_done, bugfix_phase_data = ana_task.search_bugfix_result()
-        b_arp_phase_done, arp_phase_data = ana_task.search_arp_result()
-        b_bug_created, blocked_issues = ana_task.search_blocked()
-        b_solved, unsolved_counts = ana_task.resolved()
-        if b_solved:
-            print('The issue is solved')
-        else:
-            print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
-
-        sf_case_num = ana_task.get_sf_case_num()
-        if sf_case_num:
-            case_num, created_date, email, name, sf_data = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
-            if case_num:
-                ana_task.set_sf_data(case_num, created_date, email, name)
-                if cmd=='update':
-                    ana_task.set_status(sf_data, 
-                                        analysis_phase_data,
-                                        bugfix_phase_data,
-                                        arp_phase_data)
+        run_analyze_task(jira, issue, b_update=(cmd=='update'))
 
 if cmd=='test':
-    the_issue = app_release_process(jira, issue)
-    b_solved, unsolved_counts = the_issue.resolved()
-    if b_solved:
-        print('The issue is solved')
-    else:
-        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+    run_arp(jira, issue)
 
 if cmd=='verbose':
     if func=='bugfix':

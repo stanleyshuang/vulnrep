@@ -27,13 +27,10 @@ class i_issue():
 
         self.b_solved_run = False
         self.unresolved_counts = 0
+        self.unresolved_issues = []
         
     def get_status(self):
         return self.issue.fields.status.name
-        
-    @abc.abstractmethod
-    def search_result(self):
-        return []
         
     @abc.abstractmethod
     def set(self, *args, **kwargs):
@@ -109,8 +106,15 @@ class i_issue():
         
     @abc.abstractmethod
     def resolved(self):
-        if self.get_status() == '':
-            return True, 0
-        else:
-            return False, 1
+        '''
+        b_solved_run:       True or False
+        unresolved_counts:  The number of unsolved issues
+        unresolved_issues:  [{
+                                'key':      jira key
+                                'summary':  jira summary,
+                                'created':  date time in format '2021-05-13',
+                                'eta':      date time in format '2021-05-13',
+                            }]
+        '''
+        return True, 0, []
         
