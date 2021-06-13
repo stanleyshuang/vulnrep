@@ -24,7 +24,7 @@ def usage():
     print('--')
     print('jira_id:  JIRA ticket, for example, INTSI000-732')
     print('cmd:      one of --standard, --update, --verbose or --test, default value is --standard')
-    print('function: one of --analysis or --bug_fix, default value is --analysis')
+    print('function: one of --analysis or --bugfix, default value is --analysis')
     quit()
     
 
@@ -40,9 +40,9 @@ for idx in range(1, len(sys.argv)):
         cmd = sys.argv[idx][2:]
     elif sys.argv[idx] in ['standard', 'update', 'verbose', 'test']:
         cmd = sys.argv[idx]
-    elif sys.argv[idx] in ['--analysis', '--bug_fix']:
+    elif sys.argv[idx] in ['--analysis', '--bugfix']:
         func = sys.argv[idx][2:]
-    elif sys.argv[idx] in ['analysis', 'bug_fix']:
+    elif sys.argv[idx] in ['analysis', 'bugfix']:
         func = sys.argv[idx]
     else:
         jira_id = sys.argv[idx]
@@ -69,7 +69,7 @@ print('function: {func}'.format(func=func))
 print('cmd:      {cmd}'.format(cmd=cmd))
 print('Jira:     {jira_id}'.format(jira_id=jira_id))
 
-if func=='bug_fix':
+if func=='bugfix':
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
         bug = vuln_bug(jira, issue)
         bug.search_blocking()
@@ -84,6 +84,8 @@ else:
         ana_task = analysis_task(jira, issue)
 
         b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
+        b_bugfix_phase_done, bugfix_phase_data = ana_task.search_bugfix_result()
+        b_arp_phase_done, arp_phase_data = ana_task.search_arp_result()
         b_bug_created, blocked_issues = ana_task.search_blocked()
         b_solved, unsolved_counts = ana_task.resolved()
         if b_solved:
@@ -97,7 +99,10 @@ else:
             if case_num:
                 ana_task.set_sf_data(case_num, created_date, email, name)
                 if cmd=='update':
-                    ana_task.set_status(sf_data, analysis_phase_data)
+                    ana_task.set_status(sf_data, 
+                                        analysis_phase_data,
+                                        bugfix_phase_data,
+                                        arp_phase_data)
 
 if cmd=='test':
     the_issue = app_release_process(jira, issue)
@@ -108,7 +113,7 @@ if cmd=='test':
         print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
 
 if cmd=='verbose':
-    if func=='bug_fix':
+    if func=='bugfix':
         the_issue = bug
     else:
         the_issue = ana_task

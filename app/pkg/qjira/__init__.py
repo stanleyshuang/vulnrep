@@ -24,15 +24,16 @@ class i_issue():
         self.b_blocking_run = False
         self.b_blocking = False
         self.blocking_issues = []
+
+        self.b_solved_run = False
+        self.unresolved_counts = 0
         
     def get_status(self):
-        # print('get status {key} {status}'.format(key=self.issue.key, status=self.issue.fields.status.name))
         return self.issue.fields.status.name
         
     @abc.abstractmethod
-    def get(self):
-        print('Get..')
-        return False, u''
+    def search_result(self):
+        return []
         
     @abc.abstractmethod
     def set(self, *args, **kwargs):

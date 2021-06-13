@@ -98,7 +98,7 @@ class analysis_task(task):
         analysis_phase_data:    {
                                     'summary': analysis summary,
                                     'author': analyst who gave the comment
-                                    'created_date': date time in format '2021-05-13T22:10:45.000+0800'
+                                    'created_date': date time in format '2021-05-13'
                                 }
         '''
         print('Find analysis result')
@@ -108,7 +108,7 @@ class analysis_task(task):
         for comment in comments:
             cid = comment.id
             author = comment.author.displayName
-            time = comment.created
+            time = datetime.strptime(comment.created, '%Y-%m-%dT%H:%M:%S.000+0800')
             body = comment.body
             lines = body.split('\n')
             for line in lines:
@@ -124,37 +124,108 @@ class analysis_task(task):
                     analysis_case = {}
                     analysis_case['summary'] = line
                     analysis_case['author'] = author
-                    analysis_case['created_date'] = time
+                    analysis_case['created_date'] = utc_to_local_str(time, format='%Y-%m-%d')
                     self.analysis_phase_data.append(analysis_case)
         if not self.b_analysis_phase_done:
             print('--- Analysis is on going')
         return self.b_analysis_phase_done, self.analysis_phase_data
 
-    def set_status(self, sf_data={}, analysis_phase_data=[]):
+    def search_bugfix_result(self):
+        from .bug import vuln_bug
+        '''
+        b_bugfix_phase_done:    bugfix done or not
+        bugfix_phase_data:      {
+                                    'key': jira key
+                                    'summary': jira summary,
+                                    'created_date': date time in format '2021-05-13',
+                                }
+        '''
+        b_bugfix_phase_done = True
+        bugfix_phase_data = []
+
+        if not self.b_blocked_run:
+            self.search_blocked()
+        ### enumerate blocked issues and find bugs in the anslysis task 
+        for blocked_issue in self.blocked_issues:
+            if get_issuetype(blocked_issue) == 'Bug':
+                the_bug = vuln_bug(self.jira, blocked_issue)
+                b_bugfix_done, bugfix_data = the_bug.search_result()
+                if not b_bugfix_done:
+                    b_bugfix_phase_done = False
+                bugfix_phase_data.extend(bugfix_data)
+        return b_bugfix_phase_done, bugfix_phase_data
+
+    def search_arp_result(self):
+        from .bug import vuln_bug, app_release_process
+        '''
+        b_arp_phase_done:   arp done or not
+        arp_phase_data:     {
+                                'key': jira key
+                                'summary': jira summary,
+                                'created_date': date time in format '2021-05-13',
+                            }
+        '''
+        b_arp_phase_done = True
+        arp_phase_data = []
+
+        if not self.b_blocked_run:
+            self.search_blocked()
+        ### enumerate blocked issues and find bugs in the anslysis task 
+        for blocked_issue in self.blocked_issues:
+            if get_issuetype(blocked_issue) == 'Bug':
+                the_bug = vuln_bug(self.jira, blocked_issue)
+
+                if not the_bug.b_blocking_run:
+                    the_bug.search_blocking()
+                ### enumberate blocking issues and find app release process in the bug
+                for blocking_issue in the_bug.blocking_issues:
+                    if get_issuetype(blocking_issue) == 'App Release Process':
+                        the_app_release = app_release_process(self.jira, blocking_issue)
+                        b_arp_done, arp_data = the_app_release.search_result()
+                        if not b_arp_done:
+                            b_arp_phase_done = False
+                        arp_phase_data.extend(arp_data)
+        return b_arp_phase_done, arp_phase_data
+                
+    def set_status(self, sf_data={}, 
+                   analysis_phase_data=[],
+                   bugfix_phase_data=[],
+                   arp_phase_data=[]):
         print('Update Status')
         ### Salseforce case_num, link, researcher information
         description = self.issue.fields.description
         b_need_update, case_num, link, others = parse_salesforce_link(description)
 
-        ### Update Status
-        status_dict = {}
+        ### Update Salesforce
         if sf_data and bool(sf_data):
             self.sf_data = sf_data
-        status_dict['sf'] = self.sf_data
-        status_dict['sf_link'] = link
-        if analysis_phase_data and len(analysis_phase_data)>0:
-            status_dict['analysis'] = analysis_phase_data  
-        else:
-            status_dict['analysis'] = self.analysis_phase_data
-        status_json = json.dumps(status_dict)
+        if 'sf_link' not in self.sf_data:
+            self.sf_data['sf_link'] = link
+        str_customfield_13600 = json.dumps(self.sf_data) + '\n'
 
-        # Status Update:                customfield_13600
-        self.issue.update(fields={"customfield_13600": status_json})
+        ### Update Analysis
+        if not analysis_phase_data or len(analysis_phase_data)==0:
+            analysis_phase_data = self.analysis_phase_data
+        str_customfield_13600 += json.dumps(analysis_phase_data) + '\n'
+
+        if bugfix_phase_data and len(bugfix_phase_data)>0:
+            str_customfield_13600 += json.dumps(bugfix_phase_data) + '\n'
+
+        if arp_phase_data and len(arp_phase_data)>0:
+            str_customfield_13600 += json.dumps(arp_phase_data) + '\n'
+
+        # Status Update: customfield_13600
+        if self.issue.raw['fields']["customfield_13600"] != str_customfield_13600:
+            self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
     def resolved(self):
         from .bug import vuln_bug, app_release_process
 
-        unresolved_counts = 0
+        if self.b_solved_run:
+            return self.unresolved_counts==0, self.unresolved_counts
+
+        self.b_solved_run = True
+        self.unresolved_counts = 0
         if not self.b_blocked_run:
             self.search_blocked()
 
@@ -163,9 +234,7 @@ class analysis_task(task):
             if get_issuetype(blocked_issue) == 'Bug':
                 the_bug = vuln_bug(self.jira, blocked_issue)
                 b_resolved, the_bug_unresolved_counts = the_bug.resolved()
-                unresolved_counts += the_bug_unresolved_counts
+                self.unresolved_counts += the_bug_unresolved_counts
 
-        if unresolved_counts>0:
-            return False, unresolved_counts
-        return True, 0
+        return self.unresolved_counts==0, self.unresolved_counts
 
