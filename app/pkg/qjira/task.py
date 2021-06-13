@@ -11,18 +11,24 @@ from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue
 from .function import parse_salesforce_link
 
-class analysis_task(i_issue):
+class task(i_issue):
+    '''
+    Jira task
+    '''
+    def __init__(self, jira, issue):
+        super(task, self).__init__(jira, issue)
+        if self.get_issuetype() != 'Task':
+            raise Exception("Jira issuetype mismatch!!")
+
+class analysis_task(task):
     '''
     Jira task for vulnerabilty analysis
     '''
     def __init__(self, jira, issue):
         super(analysis_task, self).__init__(jira, issue)
-
-    def get(self):
-        return (False, u'', 'N/A', 'N/A')
-        
-    def set(self):
-        pass
+        self.sf_data = {}
+        self.b_analysis_phase_done = False
+        self.analysis_phase_data = []
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -86,34 +92,18 @@ class analysis_task(i_issue):
             self.issue.update(fields={"customfield_11504": deadline_str})
             print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-    def set_status(self, sf_dict, analysis_cases):
-        print('Update Status')
-        ### Salseforce case_num, link, researcher information
-        description = self.issue.fields.description
-        b_need_update, case_num, link, others = parse_salesforce_link(description)
-
-        ### Update Status
-        status_dict = {}
-        status_dict['sf'] = sf_dict
-        status_dict['sf_link'] = link
-        status_dict['analysis'] = analysis_cases
-        status_json = json.dumps(status_dict)
-
-        # Status Update:                customfield_13600
-        self.issue.update(fields={"customfield_13600": status_json})
-
     def search_result(self):
         '''
-        b_analysis_done: analysis done or not
-        analysis_cases: {
-                            'summary': analysis summary,
-                            'author': analyst who gave the comment
-                            'created_date': date time in format '2021-05-13T22:10:45.000+0800'
-                        }
+        b_analysis_phase_done:  analysis done or not
+        analysis_phase_data:    {
+                                    'summary': analysis summary,
+                                    'author': analyst who gave the comment
+                                    'created_date': date time in format '2021-05-13T22:10:45.000+0800'
+                                }
         '''
         print('Find analysis result')
-        b_analysis_done = False
-        analysis_cases = []
+        self.b_analysis_phase_done = False
+        self.analysis_phase_data = []
         comments = self.issue.fields.comment.comments
         for comment in comments:
             cid = comment.id
@@ -130,28 +120,34 @@ class analysis_task(i_issue):
                 v5_idx = line.find('[V5]')
                 if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
                     print('--- Analysis is DONE as {line}'.format(line=line))
-                    b_analysis_done = True
+                    self.b_analysis_phase_done = True
                     analysis_case = {}
                     analysis_case['summary'] = line
                     analysis_case['author'] = author
                     analysis_case['created_date'] = time
-                    analysis_cases.append(analysis_case)
-        if not b_analysis_done:
+                    self.analysis_phase_data.append(analysis_case)
+        if not self.b_analysis_phase_done:
             print('--- Analysis is on going')
-        return b_analysis_done, analysis_cases
+        return self.b_analysis_phase_done, self.analysis_phase_data
 
+    def set_status(self, sf_data={}, analysis_phase_data=[]):
+        print('Update Status')
+        ### Salseforce case_num, link, researcher information
+        description = self.issue.fields.description
+        b_need_update, case_num, link, others = parse_salesforce_link(description)
 
+        ### Update Status
+        status_dict = {}
+        if sf_data and bool(sf_data):
+            self.sf_data = sf_data
+        status_dict['sf'] = self.sf_data
+        status_dict['sf_link'] = link
+        if analysis_phase_data and len(analysis_phase_data)>0:
+            status_dict['analysis'] = analysis_phase_data  
+        else:
+            status_dict['analysis'] = self.analysis_phase_data
+        status_json = json.dumps(status_dict)
 
-class vuln_bug(i_issue):
-    '''
-    Jira bug for vulnerabilty fixing
-    '''
-    def __init__(self, jira, issue):
-        super(vuln_bug, self).__init__(jira, issue)
-
-    def get(self):
-        return (False, u'', 'N/A', 'N/A')
-        
-    def set(self):
-        pass
+        # Status Update:                customfield_13600
+        self.issue.update(fields={"customfield_13600": status_json})
 

@@ -9,7 +9,8 @@ import os
 import sys
 from jira import JIRA
 
-from pkg.qjira.issue import analysis_task, vuln_bug
+from pkg.qjira.task import analysis_task
+from pkg.qjira.bug import vuln_bug
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_text_file import get_lines, flush_text
 
@@ -77,16 +78,16 @@ else:
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
         ana_task = analysis_task(jira, issue)
 
-        b_analyzed, analysis_cases = ana_task.search_result()
+        b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
         b_bug_created, blocked_issues = ana_task.search_blocked()
 
         sf_case_num = ana_task.get_sf_case_num()
         if sf_case_num:
-            case_num, created_date, email, name, sf_dict = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
+            case_num, created_date, email, name, sf_data = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
             if case_num:
                 ana_task.set_sf_data(case_num, created_date, email, name)
                 if cmd=='update':
-                    ana_task.set_status(sf_dict, analysis_cases)
+                    ana_task.set_status(sf_data, analysis_phase_data)
 
 if cmd=='test':
         pass
