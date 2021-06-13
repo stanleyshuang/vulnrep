@@ -29,7 +29,7 @@ class i_issue():
         for fid in self.issue.raw['fields']:
             if type(self.issue.raw['fields'][fid]) is list:
                 print('--- {fid} is a list'.format(fid=fid))
-                if fid=='self.issuelinks':
+                if fid=='issuelinks':
                     for issue_link in self.issue.raw['fields'][fid]:
                         print('        - {issue_link}'.format(issue_link=issue_link))
             elif type(self.issue.raw['fields'][fid]) is dict:
@@ -48,20 +48,37 @@ class i_issue():
             time = comment.created
             body = comment.body.replace("\r", " ").replace("\n", " ")
             print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
-        
+    
     @abc.abstractmethod
     def search_blocked(self):
         print('Searching Blocked Issue(s)')
-        b_bug_ticket_created = False
+        b_blocked_exist = False
         issues = []
         if 'issuelinks' in self.issue.raw['fields']:
             for issue_link in self.issue.raw['fields']['issuelinks']:
                 if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
                     blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'])
                     if blocking_issue:
-                        print('--- Bug ticket is CREATED at {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
-                        b_bug_ticket_created = True
+                        print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
+                        b_blocked_exist = True
                         issues.append(blocking_issue)
-        if not b_bug_ticket_created:
-            print('--- Bug ticket has not been created yet')
-        return b_bug_ticket_created, issues
+        if not b_blocked_exist:
+            print('--- There is no blocking issue')
+        return b_blocked_exist, issues
+
+    @abc.abstractmethod
+    def search_blocking(self):
+        print('Searching Blocking Issue(s)')
+        b_blocking = False
+        issues = []
+        if 'issuelinks' in self.issue.raw['fields']:
+            for issue_link in self.issue.raw['fields']['issuelinks']:
+                if 'outwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
+                    blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'])
+                    if blocked_issue:
+                        print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
+                        b_blocking = True
+                        issues.append(blocked_issue)
+        if not b_blocking:
+            print('--- There is blocking no issue')
+        return b_blocking, issues

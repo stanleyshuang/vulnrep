@@ -139,3 +139,19 @@ class analysis_task(i_issue):
         if not b_analysis_done:
             print('--- Analysis is on going')
         return b_analysis_done, analysis_cases
+
+
+
+class vuln_bug(i_issue):
+    '''
+    Jira bug for vulnerabilty fixing
+    '''
+    def __init__(self, jira, issue):
+        super(vuln_bug, self).__init__(jira, issue)
+
+    def get(self):
+        return (False, u'', 'N/A', 'N/A')
+        
+    def set(self):
+        pass
+
