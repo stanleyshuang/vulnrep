@@ -30,29 +30,38 @@ def usage():
 def run_arp(jira, issue):
     the_issue = app_release_process(jira, issue)
     b_solved, unsolved_counts, unsolved_issues = the_issue.resolved()
+    print('--------------------------')
     if b_solved:
-        print('The issue is solved')
+        print('THE ISSUE IS RESOLVED')
     else:
-        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+        print('THE ISSUE IS NOT RESOLVED, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+    print('--------------------------')
 
 def run_vuln_bug(jira, issue):
     bug = vuln_bug(jira, issue)
     bug.search_blocking()
     b_solved, unsolved_counts, unsolved_issues = bug.resolved()
+    print('--------------------------')
     if b_solved:
-        print('The issue is solved')
+        print('THE ISSUE IS RESOLVED')
     else:
-        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+        print('THE ISSUE IS NOT RESOLVED, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+    print('--------------------------')
 
 def run_analyze_task(jira, issue, b_update=False):
     ana_task = analysis_task(jira, issue)
 
     b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
     b_solved, unsolved_counts, unsolved_issues = ana_task.resolved()
-    if b_solved:
-        print('The issue is solved')
+    print('--------------------------')
+    if b_analysis_phase_done and b_solved:
+        print('THE ISSUE IS RESOLVED')
     else:
-        print('The issue is not solved, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+        print('THE ISSUE IS NOT RESOLVED')
+        if not b_analysis_phase_done:
+            print('    analysis is on going..')
+        print('    unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+    print('--------------------------')
 
     unsolved_data = {}
     unsolved_data['counts'] = unsolved_counts
@@ -105,13 +114,13 @@ if cmd=='batch':
     quit()
 else:
     jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
-
+'''
 print('Jira Issue Running..')
 print('--')
 print('function: {func}'.format(func=func))
 print('cmd:      {cmd}'.format(cmd=cmd))
 print('Jira:     {jira_id}'.format(jira_id=jira_id))
-
+'''
 if func=='bugfix':
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
         run_vuln_bug(jira, issue)
