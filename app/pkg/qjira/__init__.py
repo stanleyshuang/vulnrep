@@ -28,6 +28,10 @@ class i_issue():
         self.b_solved_run = False
         self.unresolved_counts = 0
         self.unresolved_issues = []
+
+        self.author = ''
+        self.str_created = ''
+        self.status = ''
         
     def get_status(self):
         return self.issue.fields.status.name
@@ -63,6 +67,23 @@ class i_issue():
             print('        - {cid}: {author} {time}\n      {body}'.format(cid=cid, author=author, time=time, body=body))
         status = self.issue.fields.status.name
         print('--- status {status}'.format(status=status))
+
+        changelog = []
+        achangelog = self.issue.changelog
+        for history in achangelog.histories:
+            for item in history.items:
+                d = {
+                    'author': history.author.displayName,
+                    'date': history.created,
+                    'field': item.field,
+                    'fieldtype' : item.fieldtype,
+                    'from': getattr(item, 'from'), # because using item.from doesn't wor
+                    'fromString' : item.fromString,
+                    'to': item.to,
+                    'toString': item.toString
+                }
+                print(d)
+                changelog.append(d)
     
     @abc.abstractmethod
     def search_blocked(self):
@@ -117,4 +138,24 @@ class i_issue():
                             }]
         '''
         return True, 0, []
+
+    def changelog(self, field, toStrings):
+        achangelog = self.issue.changelog
+        for history in achangelog.histories:
+            for item in history.items:
+                '''
+                d = {
+                    'author': history.author.displayName,
+                    'date': history.created,
+                    'field': item.field,
+                    'fieldtype' : item.fieldtype,
+                    'from': getattr(item, 'from'), # because using item.from doesn't wor
+                    'fromString' : item.fromString,
+                    'to': item.to,
+                    'toString': item.toString
+                }
+                '''
+                if field==item.field and item.toString in toStrings:
+                    return history.author.displayName, history.created, item.toString
+        return None, None, None
         

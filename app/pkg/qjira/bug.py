@@ -43,6 +43,10 @@ class vuln_bug(bug):
                     'summary': self.issue.fields.summary,
                     'created': str_time,
                 })
+        else:
+            self.author, created, self.status = self.changelog('status', ['verified', 'abort'])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
         if not self.b_blocking_run:
             self.search_blocking()
@@ -86,5 +90,9 @@ class app_release_process(i_issue):
                     'eta': str_eta
                 })
             self.unresolved_counts = 1
+        else:
+            self.author, created, self.status = self.changelog('status', ['done', 'abort'])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
         return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
 

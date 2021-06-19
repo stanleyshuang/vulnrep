@@ -17,7 +17,7 @@ from pkg.util.util_text_file import get_lines, flush_text
 
 def get_jira_issue(server, username, password, jira_id):
     jira = JIRA(basic_auth=(username, password), options={'server': server})
-    return jira, jira.issue(jira_id)
+    return jira, jira.issue(jira_id, expand='changelog')
 
 def usage():
     print('USAGE:    python main.py jira_id [cmd] [function]')
@@ -32,7 +32,8 @@ def run_arp(jira, issue):
     b_solved, unsolved_counts, unsolved_issues = the_issue.resolved()
     print('--------------------------')
     if b_solved:
-        print('THE ISSUE IS RESOLVED')
+        print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=the_issue.author,
+                                                                      str_created=the_issue.str_created))
     else:
         print('THE ISSUE IS NOT RESOLVED, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
     print('--------------------------')
@@ -43,10 +44,12 @@ def run_vuln_bug(jira, issue):
     b_solved, unsolved_counts, unsolved_issues = bug.resolved()
     print('--------------------------')
     if b_solved:
-        print('THE ISSUE IS RESOLVED')
+        print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=bug.author,
+                                                                      str_created=bug.str_created))
     else:
         print('THE ISSUE IS NOT RESOLVED, unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
     print('--------------------------')
+    return bug
 
 def run_analyze_task(jira, issue, b_update=False):
     ana_task = analysis_task(jira, issue)
@@ -55,7 +58,8 @@ def run_analyze_task(jira, issue, b_update=False):
     b_solved, unsolved_counts, unsolved_issues = ana_task.resolved()
     print('--------------------------')
     if b_analysis_phase_done and b_solved:
-        print('THE ISSUE IS RESOLVED')
+        print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=ana_task.author,
+                                                                      str_created=ana_task.str_created))
     else:
         print('THE ISSUE IS NOT RESOLVED')
         if not b_analysis_phase_done:
@@ -76,6 +80,7 @@ def run_analyze_task(jira, issue, b_update=False):
                 ana_task.set_status(sf_data, 
                                     analysis_phase_data,
                                     unsolved_data)
+    return ana_task
     
 if len(sys.argv) == 1:
     usage()
@@ -123,11 +128,11 @@ print('Jira:     {jira_id}'.format(jira_id=jira_id))
 '''
 if func=='bugfix':
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
-        run_vuln_bug(jira, issue)
+        bug = run_vuln_bug(jira, issue)
 else:
     # func == 'analysis'
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
-        run_analyze_task(jira, issue, b_update=(cmd=='update'))
+        ana_task = run_analyze_task(jira, issue, b_update=(cmd=='update'))
 
 if cmd=='test':
     run_arp(jira, issue)

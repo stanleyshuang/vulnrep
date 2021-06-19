@@ -179,5 +179,10 @@ class analysis_task(task):
                 self.unresolved_counts += the_bug_unresolved_counts
                 self.unresolved_issues.extend(the_bug_unresolved_issues)
 
+        if self.get_status().lower() in ['done', 'abort']:
+            self.author, created, self.status = self.changelog('status', ['done', 'abort'])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
+
         return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
 
