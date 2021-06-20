@@ -131,7 +131,6 @@ class analysis_task(task):
         return self.b_analysis_phase_done, self.analysis_phase_data
                 
     def set_status(self, sf_data={}, 
-                   analysis_phase_data=[],
                    unsolved_data={}):
         print('Update Status')
         ### Salseforce case_num, link, researcher information
@@ -147,9 +146,7 @@ class analysis_task(task):
         dict_customfield_13600['SF'] = self.sf_data
 
         ### Update Analysis
-        if not analysis_phase_data or len(analysis_phase_data)==0:
-            analysis_phase_data = self.analysis_phase_data
-        dict_customfield_13600['ANALYSIS'] = analysis_phase_data
+        dict_customfield_13600['ANALYSIS'] = self.analysis_phase_data
 
         if unsolved_data and bool(unsolved_data):
             dict_customfield_13600['UNSOLVED'] = unsolved_data
@@ -160,10 +157,17 @@ class analysis_task(task):
             self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
     def resolved(self):
+        '''
+        the following variables would be updated
+        self.b_analysis_phase_done
+        self.analysis_phase_data
+        '''
+        self.search_result()
+
         from .bug import vuln_bug, app_release_process
 
         if self.b_solved_run:
-            return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+            return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
         self.b_solved_run = True
         self.unresolved_counts = 0
@@ -179,10 +183,11 @@ class analysis_task(task):
                 self.unresolved_counts += the_bug_unresolved_counts
                 self.unresolved_issues.extend(the_bug_unresolved_issues)
 
-        if self.get_status().lower() in ['done', 'abort']:
-            self.author, created, self.status = self.changelog('status', ['done', 'abort'])
+        if self.get_status().lower() in ['close']:
+            self.author, created, self.status = self.get_change_auther_and_created('status', ['close'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
-        return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+        self.b_solved = (self.b_analysis_phase_done or self.status=='close') and self.unresolved_counts==0
+        return self.b_solved, self.unresolved_counts, self.unresolved_issues
 

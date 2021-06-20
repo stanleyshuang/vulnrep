@@ -54,20 +54,23 @@ def run_vuln_bug(jira, issue):
 def run_analyze_task(jira, issue, b_update=False):
     ana_task = analysis_task(jira, issue)
 
-    b_analysis_phase_done, analysis_phase_data = ana_task.search_result()
     b_solved, unsolved_counts, unsolved_issues = ana_task.resolved()
     print('--------------------------')
-    if b_analysis_phase_done and b_solved:
+    if b_solved:
         print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=ana_task.author,
                                                                       str_created=ana_task.str_created))
     else:
         print('THE ISSUE IS NOT RESOLVED')
-        if not b_analysis_phase_done:
+        if not ana_task.b_analysis_phase_done:
             print('    analysis is on going..')
         print('    unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
     print('--------------------------')
 
     unsolved_data = {}
+    if ana_task.b_solved:
+        unsolved_data['author'] = ana_task.author
+        unsolved_data['str_created'] = ana_task.str_created
+        unsolved_data['status'] = ana_task.status
     unsolved_data['counts'] = unsolved_counts
     unsolved_data['issues'] = unsolved_issues
 
@@ -78,7 +81,6 @@ def run_analyze_task(jira, issue, b_update=False):
             ana_task.set_sf_data(case_num, created_date, email, name)
             if b_update:
                 ana_task.set_status(sf_data, 
-                                    analysis_phase_data,
                                     unsolved_data)
     return ana_task
     

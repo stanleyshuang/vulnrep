@@ -28,7 +28,7 @@ class vuln_bug(bug):
         
     def resolved(self):
         if self.b_solved_run:
-            return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+            return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
         self.b_solved_run = True
         self.unresolved_counts = 0
@@ -44,7 +44,7 @@ class vuln_bug(bug):
                     'created': str_time,
                 })
         else:
-            self.author, created, self.status = self.changelog('status', ['verified', 'abort'])
+            self.author, created, self.status = self.get_change_auther_and_created('status', ['verified', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
@@ -59,7 +59,8 @@ class vuln_bug(bug):
                 self.unresolved_counts += the_app_release_unresolved_counts
                 self.unresolved_issues.extend(the_app_release_unresolved_issues)
 
-        return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+        self.b_solved = self.status=='verified' and self.unresolved_counts==0
+        return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
 class app_release_process(i_issue):
     '''
@@ -72,7 +73,7 @@ class app_release_process(i_issue):
         
     def resolved(self):
         if self.b_solved_run:
-            return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+            return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
         self.b_solved_run = True
         self.unresolved_counts = 0
@@ -91,8 +92,10 @@ class app_release_process(i_issue):
                 })
             self.unresolved_counts = 1
         else:
-            self.author, created, self.status = self.changelog('status', ['done', 'abort'])
+            self.author, created, self.status = self.get_change_auther_and_created('status', ['done', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-        return self.unresolved_counts==0, self.unresolved_counts, self.unresolved_issues
+
+        self.b_solved = self.status=='done' and self.unresolved_counts==0
+        return self.b_solved, self.unresolved_counts, self.unresolved_issues
 

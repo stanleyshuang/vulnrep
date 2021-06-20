@@ -26,6 +26,7 @@ class i_issue():
         self.blocking_issues = []
 
         self.b_solved_run = False
+        self.b_solved = False
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
@@ -96,7 +97,7 @@ class i_issue():
         if 'issuelinks' in self.issue.raw['fields']:
             for issue_link in self.issue.raw['fields']['issuelinks']:
                 if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
-                    blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'])
+                    blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'], expand='changelog')
                     if blocking_issue:
                         print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
                         self.b_blocked_exist = True
@@ -116,7 +117,7 @@ class i_issue():
         if 'issuelinks' in self.issue.raw['fields']:
             for issue_link in self.issue.raw['fields']['issuelinks']:
                 if 'outwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
-                    blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'])
+                    blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'], expand='changelog')
                     if blocked_issue:
                         print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
                         self.b_blocking = True
@@ -137,9 +138,9 @@ class i_issue():
                                 'eta':      date time in format '2021-05-13',
                             }]
         '''
-        return True, 0, []
+        return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
-    def changelog(self, field, toStrings):
+    def get_change_auther_and_created(self, field, toStrings):
         achangelog = self.issue.changelog
         for history in achangelog.histories:
             for item in history.items:
