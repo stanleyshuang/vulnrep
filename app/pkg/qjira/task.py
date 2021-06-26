@@ -27,7 +27,9 @@ class analysis_task(task):
     def __init__(self, jira, issue):
         super(analysis_task, self).__init__(jira, issue)
         self.sf_data = {}
-        self.b_analysis_phase_done = False
+        self.b_analysis_done = False
+        self.b_verification_done = False
+        self.b_apprelease_done = False
         self.analysis_phase_data = []
 
     def get_sf_case_num(self):
@@ -94,7 +96,7 @@ class analysis_task(task):
 
     def search_result(self):
         '''
-        b_analysis_phase_done:  analysis done or not
+        b_analysis_done:  analysis done or not
         analysis_phase_data:    {
                                     'summary': analysis summary,
                                     'author': analyst who gave the comment
@@ -102,7 +104,7 @@ class analysis_task(task):
                                 }
         '''
         print('Find analysis result')
-        self.b_analysis_phase_done = False
+        self.b_analysis_done = False
         self.analysis_phase_data = []
         comments = self.issue.fields.comment.comments
         for comment in comments:
@@ -120,15 +122,15 @@ class analysis_task(task):
                 v5_idx = line.find('[V5]')
                 if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
                     print('--- Analysis is DONE as {line}'.format(line=line))
-                    self.b_analysis_phase_done = True
+                    self.b_analysis_done = True
                     analysis_case = {}
                     analysis_case['summary'] = line
                     analysis_case['author'] = author
                     analysis_case['created'] = utc_to_local_str(time, format='%Y-%m-%d')
                     self.analysis_phase_data.append(analysis_case)
-        if not self.b_analysis_phase_done:
+        if not self.b_analysis_done:
             print('--- Analysis is on going')
-        return self.b_analysis_phase_done, self.analysis_phase_data
+        return self.b_analysis_done, self.analysis_phase_data
                 
     def set_status(self, sf_data={}, 
                    unsolved_data={}):
@@ -159,7 +161,7 @@ class analysis_task(task):
     def resolved(self):
         '''
         the following variables would be updated
-        self.b_analysis_phase_done
+        self.b_analysis_done
         self.analysis_phase_data
         '''
         self.search_result()
@@ -175,19 +177,24 @@ class analysis_task(task):
 
         if not self.b_blocked_run:
             self.search_blocked()
-        ### enumerate blocked issues and find bugs in the anslysis task 
+        ### enumerate blocked issues and find bugs in the anslysis task
+        self.b_verification_done = True
         for blocked_issue in self.blocked_issues:
             if get_issuetype(blocked_issue) == 'Bug':
                 the_bug = vuln_bug(self.jira, blocked_issue)
                 b_resolved, the_bug_unresolved_counts, the_bug_unresolved_issues = the_bug.resolved()
+                if the_bug.status!='verified':
+                    self.b_verification_done = False
                 self.unresolved_counts += the_bug_unresolved_counts
                 self.unresolved_issues.extend(the_bug_unresolved_issues)
+        if self.unresolved_counts == 0:
+            self.b_apprelease_done = True
 
-        if self.get_status().lower() in ['close']:
-            self.author, created, self.status = self.get_change_auther_and_created('status', ['close'])
-            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
+        status = self.issue.fields.status.name.lower()
+        self.author, created, self.status = self.get_change_auther_and_created('status', [status])
+        created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+        self.str_created = utc_to_local_str(created, format='%Y-%m-%d') 
 
-        self.b_solved = (self.b_analysis_phase_done or self.status=='close') and self.unresolved_counts==0
+        self.b_solved = self.status=='close' and self.unresolved_counts==0
         return self.b_solved, self.unresolved_counts, self.unresolved_issues
 

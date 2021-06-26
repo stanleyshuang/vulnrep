@@ -88,7 +88,7 @@ class i_issue():
     
     @abc.abstractmethod
     def search_blocked(self):
-        print('Searching Blocked Issue(s)')
+        # print('Searching Blocked Issue(s)')
         if self.b_blocked_run:
             return self.b_blocked_exist, self.blocked_issues
         self.b_blocked_run = True
@@ -99,16 +99,17 @@ class i_issue():
                 if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
                     blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'], expand='changelog')
                     if blocking_issue:
-                        print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
+                        # print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
                         self.b_blocked_exist = True
                         self.blocked_issues.append(blocking_issue)
         if not self.b_blocked_exist:
-            print('--- There is no blocking issue')
+            # print('--- There is no blocking issue')
+            pass
         return self.b_blocked_exist, self.blocked_issues
 
     @abc.abstractmethod
     def search_blocking(self):
-        print('Searching Blocking Issue(s)')
+        # print('Searching Blocking Issue(s)')
         if self.b_blocking_run:
             return self.b_blocking, self.blocking_issues
         self.b_blocking_run = True
@@ -119,11 +120,12 @@ class i_issue():
                 if 'outwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
                     blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'], expand='changelog')
                     if blocked_issue:
-                        print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
+                        # print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
                         self.b_blocking = True
                         self.blocking_issues.append(blocked_issue)
         if not self.b_blocking:
-            print('--- There is blocking no issue')
+            # print('--- There is blocking no issue')
+            pass
         return self.b_blocking, self.blocking_issues
         
     @abc.abstractmethod

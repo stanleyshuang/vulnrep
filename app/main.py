@@ -60,10 +60,24 @@ def run_analyze_task(jira, issue, b_update=False):
         print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=ana_task.author,
                                                                       str_created=ana_task.str_created))
     else:
-        print('THE ISSUE IS NOT RESOLVED')
-        if not ana_task.b_analysis_phase_done:
+        print('THE ISSUE IS NOT RESOLVED, {author}, {str_created}, status: {status}'.format(author=ana_task.author,
+                                                                                            str_created=ana_task.str_created,
+                                                                                            status=ana_task.status))
+        if ana_task.b_analysis_done:
+            print('    analysis is done')
+            for vuln_case in ana_task.analysis_phase_data:
+                print('        - {summary} {author}, {created}'.format(summary=vuln_case['summary'],
+                                                                           author=vuln_case['author'],
+                                                                           created=vuln_case['created']))
+        else:
             print('    analysis is on going..')
+        if ana_task.b_verification_done:
+            print('    verification is done.')
+        if ana_task.b_apprelease_done:
+            print('    app(s) are all uploaded.')
         print('    unsolved counts is {unsolved_counts}'.format(unsolved_counts=unsolved_counts))
+        for unsolved_issue in unsolved_issues:
+            print('        {unsolved_issue}'.format(unsolved_issue=unsolved_issue))
     print('--------------------------')
 
     unsolved_data = {}
