@@ -9,8 +9,8 @@ import datetime, re
 
 def is_cve_json_filename(filename):
     # CVE regular expression
-    cve_pattern = r'CVE-\d{4}-\d{4,7}'
-    is_cve = re.search(cve_pattern, filename)
+    cve_pattern = r'^CVE-\d{4}-\d{4,7}$'
+    is_cve = re.match(cve_pattern, filename)
     return is_cve
 
 def modify_cve_json(input_file, output_file, 
