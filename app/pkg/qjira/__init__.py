@@ -89,9 +89,7 @@ class i_issue():
         for attachment in self.issue.fields.attachment:    
             image = attachment.get()    
             jira_filename = attachment.filename
-            print('    {attachment}'.format(attachment=jira_filename)) 
-            # with open(jira_filename, 'wb') as f:        
-                # f.write(image) 
+            print('    {attachment}'.format(attachment=jira_filename))
 
     def download_cve_jsons(self, downloads):
         import os

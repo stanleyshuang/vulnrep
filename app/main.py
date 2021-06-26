@@ -13,7 +13,6 @@ from pkg.qjira.task import analysis_task
 from pkg.qjira.bug import vuln_bug, app_release_process
 from pkg.qsalesforce import sf_get_data
 from pkg.util.util_file import create_folder
-from pkg.util.util_text_file import get_lines, flush_text
 
 
 def get_jira_issue(server, username, password, jira_id):
