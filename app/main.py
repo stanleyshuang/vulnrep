@@ -61,9 +61,7 @@ def run_analyze_task(jira, issue, downloads, b_update=False):
         print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=ana_task.author,
                                                                       str_created=ana_task.str_created))
     else:
-        print('THE ISSUE IS NOT RESOLVED, {author}, {str_created}, status: {status}'.format(author=ana_task.author,
-                                                                                            str_created=ana_task.str_created,
-                                                                                            status=ana_task.status))
+        print('THE ISSUE IS NOT RESOLVED')
         if ana_task.b_analysis_done:
             print('    analysis is done')
             for vuln_case in ana_task.analysis_phase_data:
