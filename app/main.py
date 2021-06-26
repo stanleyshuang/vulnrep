@@ -139,6 +139,11 @@ if cmd=='batch':
     for an_issue in jira.search_issues('project = INTSI000 AND type = Task AND component = vulnerability_report ORDER BY key ASC'):
         run_analyze_task(jira, an_issue, downloads, b_update=True)
     quit()
+elif cmd=='test':
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
+    quit()
 else:
     jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
 '''
@@ -155,9 +160,6 @@ else:
     # func == 'analysis'
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
         ana_task = run_analyze_task(jira, issue, downloads, b_update=(cmd=='update'))
-
-if cmd=='test':
-    run_arp(jira, issue)
 
 if cmd=='verbose':
     if func=='bugfix':
