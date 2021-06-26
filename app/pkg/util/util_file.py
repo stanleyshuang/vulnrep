@@ -6,6 +6,10 @@
 # Date:     2017/12/15
 # 
 import errno, gzip, json, os, re, sys
+from pathlib import Path
+
+def create_folder(folder):
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
 def silentremove(filename):
     try:
@@ -43,11 +47,6 @@ def open_gzip_json(filename):
 def open_gzip_multi_json(filename):
     return open_gzipfile_with_multi_line_json(filename)
    
-def open_json(filename):
-    with open(filename) as data_file:
-    	data = json.load(data_file)
-    return data
-   
 def open_gzipfile_with_single_json(filename):
     data = None
     with gzip.open(filename, 'rb') as f:
@@ -70,7 +69,4 @@ def open_gzipfile_with_multi_line_json(filename):
                 print("\t\texception [ValueError] at parsing [{filename}]".format(filename=filename))
                 data = None
     return data
-    
-def dump_json(data):
-    return json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False).encode('utf8')
     

@@ -40,9 +40,12 @@ class vuln_bug(bug):
             self.unresolved_counts += 1
             self.unresolved_issues.append({
                     'key': self.issue.key,
-                    'summary': self.issue.fields.summary,
                     'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status().lower(),
+                    'summary': self.issue.fields.summary,
                 })
+            self.status = self.get_status().lower()
         else:
             self.author, created, self.status = self.get_change_auther_and_created('status', ['verified', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
@@ -86,11 +89,14 @@ class app_release_process(i_issue):
             str_eta = utc_to_local_str(eta, format='%Y-%m-%d')
             self.unresolved_issues.append({
                     'key': self.issue.key,
-                    'summary': self.issue.fields.summary,
                     'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status().lower(),
+                    'summary': self.issue.fields.summary,
                     'eta': str_eta
                 })
             self.unresolved_counts = 1
+            self.status = self.get_status().lower()
         else:
             self.author, created, self.status = self.get_change_auther_and_created('status', ['done', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')

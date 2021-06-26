@@ -12,6 +12,7 @@ from jira import JIRA
 from pkg.qjira.task import analysis_task
 from pkg.qjira.bug import vuln_bug, app_release_process
 from pkg.qsalesforce import sf_get_data
+from pkg.util.util_file import create_folder
 from pkg.util.util_text_file import get_lines, flush_text
 
 
@@ -51,10 +52,11 @@ def run_vuln_bug(jira, issue):
     print('--------------------------')
     return bug
 
-def run_analyze_task(jira, issue, b_update=False):
+def run_analyze_task(jira, issue, downloads, b_update=False):
     ana_task = analysis_task(jira, issue)
 
     b_solved, unsolved_counts, unsolved_issues = ana_task.resolved()
+    ana_task.download_cve_jsons(downloads)
     print('--------------------------')
     if b_solved:
         print('THE ISSUE IS RESOLVED, {author}, {str_created}'.format(author=ana_task.author,
@@ -128,10 +130,15 @@ salesforce_username = os.environ.get('salesforce_username')
 salesforce_password = os.environ.get('salesforce_password')
 salesforce_orgid = os.environ.get('salesforce_orgid')
 
+### Create downloads folder
+apphome = os.environ.get('apphome')
+downloads = apphome + '/downloads'
+create_folder(downloads)
+
 if cmd=='batch':
     jira = JIRA(basic_auth=(jira_username, jira_password), options={'server': jira_url})
     for an_issue in jira.search_issues('project = INTSI000 AND type = Task AND component = vulnerability_report ORDER BY key ASC'):
-        run_analyze_task(jira, an_issue, b_update=True)
+        run_analyze_task(jira, an_issue, downloads, b_update=True)
     quit()
 else:
     jira, issue = get_jira_issue(jira_url, jira_username, jira_password, jira_id)
@@ -148,7 +155,7 @@ if func=='bugfix':
 else:
     # func == 'analysis'
     if cmd=='standard' or cmd=='verbose' or cmd=='update':
-        ana_task = run_analyze_task(jira, issue, b_update=(cmd=='update'))
+        ana_task = run_analyze_task(jira, issue, downloads, b_update=(cmd=='update'))
 
 if cmd=='test':
     run_arp(jira, issue)

@@ -103,7 +103,7 @@ class analysis_task(task):
                                     'created': date time in format '2021-05-13'
                                 }
         '''
-        print('Find analysis result')
+        # print('Find analysis result')
         self.b_analysis_done = False
         self.analysis_phase_data = []
         comments = self.issue.fields.comment.comments
@@ -121,7 +121,7 @@ class analysis_task(task):
                 v4_idx = line.find('[V4]')
                 v5_idx = line.find('[V5]')
                 if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
-                    print('--- Analysis is DONE as {line}'.format(line=line))
+                    # print('--- Analysis is DONE as {line}'.format(line=line))
                     self.b_analysis_done = True
                     analysis_case = {}
                     analysis_case['summary'] = line
@@ -129,7 +129,8 @@ class analysis_task(task):
                     analysis_case['created'] = utc_to_local_str(time, format='%Y-%m-%d')
                     self.analysis_phase_data.append(analysis_case)
         if not self.b_analysis_done:
-            print('--- Analysis is on going')
+            # print('--- Analysis is on going')
+            pass
         return self.b_analysis_done, self.analysis_phase_data
                 
     def set_status(self, sf_data={}, 
@@ -193,8 +194,19 @@ class analysis_task(task):
         status = self.issue.fields.status.name.lower()
         self.author, created, self.status = self.get_change_auther_and_created('status', [status])
         created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-        self.str_created = utc_to_local_str(created, format='%Y-%m-%d') 
+        self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
+        if self.status!='close':
+            self.unresolved_counts += 1
+            time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_time = utc_to_local_str(time, format='%Y-%m-%d')
+            self.unresolved_issues.append({
+                    'key': self.issue.key,
+                    'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status().lower(),
+                    'summary': self.issue.fields.summary,
+                })
         self.b_solved = self.status=='close' and self.unresolved_counts==0
         return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
