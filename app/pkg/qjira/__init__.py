@@ -40,6 +40,10 @@ class i_issue():
     @abc.abstractmethod
     def set(self, *args, **kwargs):
         print('Set', args, kwargs)
+        
+    @abc.abstractmethod
+    def run(self, downloads, b_update=False):
+        print('Run')
 
     @abc.abstractmethod
     def dump(self):

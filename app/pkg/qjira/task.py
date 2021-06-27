@@ -128,10 +128,53 @@ class analysis_task(task):
                     analysis_case['author'] = author
                     analysis_case['created'] = utc_to_local_str(time, format='%Y-%m-%d')
                     self.analysis_phase_data.append(analysis_case)
+        if not self.b_analysis_done and self.get_status()=='abort':
+            self.b_analysis_done = True
         if not self.b_analysis_done:
             # print('--- Analysis is on going')
             pass
         return self.b_analysis_done, self.analysis_phase_data
+
+    def run(self, downloads, b_update=False):
+        issue_status = {}
+        b_solved, unresolved_counts, unresolved_issues = self.resolved()
+
+        self.download_cve_jsons(downloads)
+        if b_solved:
+            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
+        else:
+            issue_status['summary'] = 'NOT RESOLVED'
+            issue_status['analysis'] = {}
+            if self.b_analysis_done:
+                issue_status['analysis']['status'] = 'done'
+                issue_status['analysis']['cases'] = []
+                for vuln_case in self.analysis_phase_data:
+                    issue_status['analysis']['cases'] = '{summary} {author}, {created}'.format(summary=vuln_case['summary'],
+                                                                                               author=vuln_case['author'],
+                                                                                               created=vuln_case['created'])
+            else:
+                issue_status['analysis']['status'] = 'on-going..'
+
+            issue_status['verification'] = {}
+            if self.b_verification_done:
+                issue_status['verification']['status'] = 'done'
+
+            issue_status['apprelease'] = {}
+            if self.b_apprelease_done:
+                issue_status['apprelease']['status'] = 'all_uploaded'
+
+            issue_status['unsolved_cases'] = {}
+            issue_status['unsolved_cases']['counts'] = unresolved_counts
+            if len(unresolved_issues)>0:
+                issue_status['unsolved_cases']['cases'] = unresolved_issues
+
+        if self.b_solved:
+            issue_status['author'] = self.author
+            issue_status['latest_updated'] = self.str_created
+            issue_status['issue_status'] = self.status
+
+        print(json.dumps(issue_status, indent=4))
+        return issue_status
                 
     def set_status(self, sf_data={}, 
                    unsolved_data={}):
@@ -152,11 +195,12 @@ class analysis_task(task):
         dict_customfield_13600['ANALYSIS'] = self.analysis_phase_data
 
         if unsolved_data and bool(unsolved_data):
-            dict_customfield_13600['UNSOLVED'] = unsolved_data
+            dict_customfield_13600['STATUS'] = unsolved_data
 
         # Status Update: customfield_13600
-        str_customfield_13600 = json.dumps(dict_customfield_13600)
+        str_customfield_13600 = json.dumps(dict_customfield_13600, indent=4)
         if self.issue.raw['fields']["customfield_13600"] != str_customfield_13600:
+            print('--- update Status Update (customfield_13600)')
             self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
     def resolved(self):
@@ -196,7 +240,7 @@ class analysis_task(task):
         created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
         self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
-        if self.status!='close':
+        if self.status not in ['close', 'abort']:
             self.unresolved_counts += 1
             time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_time = utc_to_local_str(time, format='%Y-%m-%d')
@@ -207,6 +251,6 @@ class analysis_task(task):
                     'status': self.get_status().lower(),
                     'summary': self.issue.fields.summary,
                 })
-        self.b_solved = self.status=='close' and self.unresolved_counts==0
+        self.b_solved = self.status in ['close', 'abort'] and self.unresolved_counts==0
         return self.b_solved, self.unresolved_counts, self.unresolved_issues
 
