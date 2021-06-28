@@ -24,14 +24,14 @@ def usage():
     print('USAGE:    python main.py cmd [mode] jira_id')
     print('--')
     print('cmd:      one of --standard or --update, default value is --standard')
-    print('mode:     one of --verbose or --regular')
+    print('mode:     one of --verbose or --regular, default value is --regular')
     print('jira_id:  JIRA ticket, for example, INTSI000-732')
     print('-------------------------------------------------')
     print('USAGE:    python main.py cmd')
     print('--')
     print('cmd:      one of --batch or --test')
-    print('          batch for batch running')
-    print('          test for unit test')
+    print('          --batch for batch running')
+    print('          --test for unit test')
     quit()
     
 if len(sys.argv) == 1:
@@ -42,9 +42,9 @@ jira_id = ''
 cmd = 'standard'
 mode = 'regular'
 for idx in range(1, len(sys.argv)):
-    if sys.argv[idx] in ['--standard', '--update', '--test', '--batch']:
+    if sys.argv[idx] in ['--update', '--test', '--batch']:
         cmd = sys.argv[idx][2:]
-    elif sys.argv[idx] in ['standard', 'update', 'test', 'batch']:
+    elif sys.argv[idx] in ['update', 'test', 'batch']:
         cmd = sys.argv[idx]
     elif sys.argv[idx] in ['--verbose']:
         mode = sys.argv[idx][2:]

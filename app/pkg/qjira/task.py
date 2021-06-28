@@ -210,7 +210,6 @@ class analysis_task(task):
         self.analysis_phase_data
         '''
         self.search_result()
-
         from .bug import vuln_bug, app_release_process
 
         if self.b_solved_run:
@@ -220,8 +219,7 @@ class analysis_task(task):
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
-        if not self.b_blocked_run:
-            self.search_blocked()
+        self.search_blocked()
         ### enumerate blocked issues and find bugs in the anslysis task
         self.b_verification_done = True
         for blocked_issue in self.blocked_issues:

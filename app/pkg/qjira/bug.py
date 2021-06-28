@@ -51,8 +51,7 @@ class vuln_bug(bug):
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
-        if not self.b_blocking_run:
-            self.search_blocking()
+        self.search_blocking()
 
         ### enumberate blocking issues and find app release process in the bug
         arp_counts = 0
