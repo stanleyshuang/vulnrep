@@ -23,17 +23,36 @@ class i_issue():
         self.b_blocking_run = False
         self.blocking_issues = []
 
-        self.b_solved_run = False
-        self.b_solved = False
+        self.b_unresolved_run = False
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
+        self.b_solved = False
         self.author = ''
         self.str_created = ''
-        self.status = ''
         
-    def get_status(self):
-        return self.issue.fields.status.name
+    def get_status_name(self):
+        return self.issue.fields.status.name.lower()
+
+    def get_auther_and_created_in_changlog(self, field, toStrings):
+        achangelog = self.issue.changelog
+        for history in achangelog.histories:
+            for item in history.items:
+                '''
+                d = {
+                    'author': history.author.displayName,
+                    'date': history.created,
+                    'field': item.field,
+                    'fieldtype' : item.fieldtype,
+                    'from': getattr(item, 'from'), # because using item.from doesn't wor
+                    'fromString' : item.fromString,
+                    'to': item.to,
+                    'toString': item.toString
+                }
+                '''
+                if field==item.field and item.toString in toStrings:
+                    return history.author.displayName, history.created, item.toString
+        return None, None, None
         
     @abc.abstractmethod
     def set(self, *args, **kwargs):
@@ -42,6 +61,10 @@ class i_issue():
     @abc.abstractmethod
     def run(self, downloads, b_update=False):
         print('Run')
+
+    @abc.abstractmethod
+    def collect_unresolved_issues(self):
+        pass
 
     @abc.abstractmethod
     def dump(self):
@@ -127,7 +150,6 @@ class i_issue():
                             'description', 'url',
                             'solution', 'credit', 'qsa_id')
     
-    @abc.abstractmethod
     def search_blocked(self):
         # print('Searching Blocked Issue(s)')
         if self.b_blocked_run:
@@ -143,7 +165,6 @@ class i_issue():
                         self.blocked_issues.append(blocking_issue)
         return self.blocked_issues
 
-    @abc.abstractmethod
     def search_blocking(self):
         # print('Searching Blocking Issue(s)')
         if self.b_blocking_run:
@@ -158,38 +179,4 @@ class i_issue():
                         # print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
                         self.blocking_issues.append(blocked_issue)
         return self.blocking_issues
-        
-    @abc.abstractmethod
-    def resolved(self):
-        '''
-        b_solved_run:       True or False
-        unresolved_counts:  The number of unsolved issues
-        unresolved_issues:  [{
-                                'key':      jira key
-                                'summary':  jira summary,
-                                'created':  date time in format '2021-05-13',
-                                'eta':      date time in format '2021-05-13',
-                            }]
-        '''
-        return self.b_solved, self.unresolved_counts, self.unresolved_issues
-
-    def get_change_auther_and_created(self, field, toStrings):
-        achangelog = self.issue.changelog
-        for history in achangelog.histories:
-            for item in history.items:
-                '''
-                d = {
-                    'author': history.author.displayName,
-                    'date': history.created,
-                    'field': item.field,
-                    'fieldtype' : item.fieldtype,
-                    'from': getattr(item, 'from'), # because using item.from doesn't wor
-                    'fromString' : item.fromString,
-                    'to': item.to,
-                    'toString': item.toString
-                }
-                '''
-                if field==item.field and item.toString in toStrings:
-                    return history.author.displayName, history.created, item.toString
-        return None, None, None
         

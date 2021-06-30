@@ -30,7 +30,7 @@ class analysis_task(task):
         self.b_analysis_done = False
         self.b_verification_done = False
         self.b_apprelease_done = False
-        self.analysis_phase_data = []
+        self.analysis_data = {}
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -94,18 +94,19 @@ class analysis_task(task):
             self.issue.update(fields={"customfield_11504": deadline_str})
             print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
 
-    def search_result(self):
+    def collect_analysis_result(self):
         '''
         b_analysis_done:  analysis done or not
-        analysis_phase_data:    {
-                                    'summary': analysis summary,
-                                    'author': analyst who gave the comment
-                                    'created': date time in format '2021-05-13'
-                                }
+        analysis_data:  {
+                            'author': analyst who gave the comment,
+                            'created': date time in format '2021-05-13',
+                            'summary': [analysis summary],
+                        }
         '''
         # print('Find analysis result')
         self.b_analysis_done = False
-        self.analysis_phase_data = []
+        self.analysis_data = {}
+        self.analysis_data['summary'] = []
         comments = self.issue.fields.comment.comments
         for comment in comments:
             cid = comment.id
@@ -122,38 +123,58 @@ class analysis_task(task):
                 v5_idx = line.find('[V5]')
                 if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
                     # print('--- Analysis is DONE as {line}'.format(line=line))
-                    self.b_analysis_done = True
-                    analysis_case = {}
-                    analysis_case['summary'] = line
-                    analysis_case['author'] = author
-                    analysis_case['created'] = utc_to_local_str(time, format='%Y-%m-%d')
-                    self.analysis_phase_data.append(analysis_case)
-        if not self.b_analysis_done and self.get_status()=='abort':
+                    if not self.b_analysis_done:
+                        self.b_analysis_done = True
+                        self.analysis_data['status'] = 'done'
+                        self.analysis_data['author'] = author
+                        self.analysis_data['created'] = utc_to_local_str(time, format='%Y-%m-%d')
+                    self.analysis_data['summary'].append(line)
+        if not self.b_analysis_done and self.get_status_name()=='abort':
             self.b_analysis_done = True
+            self.analysis_data['status'] = 'done'
         if not self.b_analysis_done:
             # print('--- Analysis is on going')
-            pass
-        return self.b_analysis_done, self.analysis_phase_data
+            self.analysis_data['status'] = 'on-going..'
+        return self.b_analysis_done, self.analysis_data
 
     def run(self, downloads, b_update=False):
+        '''
+        b_solved:           True or False
+        unresolved_counts:  The number of unsolved issues
+        unresolved_issues:  [{
+                                'key':      jira key
+                                'summary':  jira summary,
+                                'created':  date time in format '2021-05-13',
+                                'eta':      date time in format '2021-05-13',
+                            }]
+        '''
         issue_status = {}
-        b_solved, unresolved_counts, unresolved_issues = self.resolved()
+        self.collect_analysis_result()
+        self.collect_unresolved_issues()
+
+        author, created, status = self.get_auther_and_created_in_changlog('status', [self.get_status_name()])
+        created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+        self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
+
+        if status not in ['close', 'abort']:
+            self.unresolved_counts += 1
+            time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_time = utc_to_local_str(time, format='%Y-%m-%d')
+            self.unresolved_issues.append({
+                    'key': self.issue.key,
+                    'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status_name(),
+                    'summary': self.issue.fields.summary,
+                })
+        self.b_solved = status in ['close', 'abort'] and self.unresolved_counts==0
 
         self.download_cve_jsons(downloads)
         if b_solved:
             issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
         else:
             issue_status['summary'] = 'NOT RESOLVED'
-            issue_status['analysis'] = {}
-            if self.b_analysis_done:
-                issue_status['analysis']['status'] = 'done'
-                issue_status['analysis']['cases'] = []
-                for vuln_case in self.analysis_phase_data:
-                    issue_status['analysis']['cases'] = '{summary} {author}, {created}'.format(summary=vuln_case['summary'],
-                                                                                               author=vuln_case['author'],
-                                                                                               created=vuln_case['created'])
-            else:
-                issue_status['analysis']['status'] = 'on-going..'
+            issue_status['analysis'] = self.analysis_data
 
             issue_status['verification'] = {}
             if self.b_verification_done:
@@ -171,7 +192,7 @@ class analysis_task(task):
         if self.b_solved:
             issue_status['author'] = self.author
             issue_status['latest_updated'] = self.str_created
-            issue_status['issue_status'] = self.status
+            issue_status['issue_status'] = status
 
         print(json.dumps(issue_status, indent=4))
         return issue_status
@@ -192,7 +213,7 @@ class analysis_task(task):
         dict_customfield_13600['SF'] = self.sf_data
 
         ### Update Analysis
-        dict_customfield_13600['ANALYSIS'] = self.analysis_phase_data
+        dict_customfield_13600['ANALYSIS'] = self.analysis_data
 
         if unsolved_data and bool(unsolved_data):
             dict_customfield_13600['STATUS'] = unsolved_data
@@ -203,52 +224,21 @@ class analysis_task(task):
             print('--- update Status Update (customfield_13600)')
             self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
-    def resolved(self):
-        '''
-        the following variables would be updated
-        self.b_analysis_done
-        self.analysis_phase_data
-        '''
-        self.search_result()
-        from .bug import vuln_bug, app_release_process
+    def collect_unresolved_issues(self):
+        from .bug import vuln_bug
 
-        if self.b_solved_run:
-            return self.b_solved, self.unresolved_counts, self.unresolved_issues
+        if self.b_unresolved_run:
+            return
 
-        self.b_solved_run = True
+        self.b_unresolved_run = True
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
         self.search_blocked()
         ### enumerate blocked issues and find bugs in the anslysis task
-        self.b_verification_done = True
         for blocked_issue in self.blocked_issues:
             if get_issuetype(blocked_issue) == 'Bug':
                 the_bug = vuln_bug(self.jira, blocked_issue)
-                b_resolved, the_bug_unresolved_counts, the_bug_unresolved_issues = the_bug.resolved()
-                if the_bug.status!='verified':
-                    self.b_verification_done = False
-                self.unresolved_counts += the_bug_unresolved_counts
-                self.unresolved_issues.extend(the_bug_unresolved_issues)
-        if self.unresolved_counts == 0:
-            self.b_apprelease_done = True
-
-        status = self.issue.fields.status.name.lower()
-        self.author, created, self.status = self.get_change_auther_and_created('status', [status])
-        created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-        self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-
-        if self.status not in ['close', 'abort']:
-            self.unresolved_counts += 1
-            time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            str_time = utc_to_local_str(time, format='%Y-%m-%d')
-            self.unresolved_issues.append({
-                    'key': self.issue.key,
-                    'created': str_time,
-                    'issuetype': get_issuetype(self.issue),
-                    'status': self.get_status().lower(),
-                    'summary': self.issue.fields.summary,
-                })
-        self.b_solved = self.status in ['close', 'abort'] and self.unresolved_counts==0
-        return self.b_solved, self.unresolved_counts, self.unresolved_issues
-
+                the_bug.collect_unresolved_issues()
+                self.unresolved_counts += the_bug.unresolved_counts
+                self.unresolved_issues.extend(the_bug.unresolved_issues)
