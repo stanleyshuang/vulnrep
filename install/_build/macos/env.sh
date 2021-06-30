@@ -3,14 +3,15 @@
 ### Primary variables
 srv_home="/Users/$USER/srv"
 script_path="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-if [ $(basename $0) == 'env.sh' ]; then
+echo "basename: " $(basename $0)
+if [[ $(basename $0) == 'env.sh' ]]; then
   project="$(basename $(dirname $(dirname $(dirname $script_path))))"
-  base_dir=$script_path/../../../
-elif [ $(basename $0) == 'run.sh' ]; then
+  base_dir=$script_path/../../..
+elif [[ $(basename $0) == 'run.sh' ]]; then
   project="$(basename $script_path)"
   base_dir=$script_path
 else
-  project="helloworld"
+  project="$(basename $script_path)"
   base_dir=$script_path
 fi
 
