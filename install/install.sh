@@ -12,7 +12,7 @@ env="$base_dir/_build/$1"
 # the configuration
 if [ $# != 1 ]; then
     echo "!> Missing environment information." 
-    echo "!> Usage: $0 <lab | stg | pro>"
+    echo "!> Usage: $0 <macos | windows | linux>"
     exit
 fi
 
@@ -77,6 +77,6 @@ fi
 echo "-- Run the following script ----"
 echo "cd $apphome/"
 echo "source $apphome/venv/bin/activate"
-echo "source $src/../install/_build/lab/env.sh"
+echo "source $env/env.sh"
 echo "source ./credential.sh"
 echo "python main.py"

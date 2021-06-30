@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
-origin_path=$(pwd)
-work_path=$(dirname $0)
-cd $work_path
-base_dir=$(pwd)
-cd $origin_path
 
 ### Primary variables
 srv_home="/Users/$USER/srv"
 script_path="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-project="$(basename $(dirname $(dirname $(dirname $script_path))))"
+if [ $(basename $0) == 'env.sh' ]; then
+  project="$(basename $(dirname $(dirname $(dirname $script_path))))"
+  base_dir=$script_path/../../../
+elif [ $(basename $0) == 'run.sh' ]; then
+  project="$(basename $script_path)"
+  base_dir=$script_path
+else
+  project="helloworld"
+  base_dir=$script_path
+fi
 
 echo '### Primary variables'
 echo 'srv_home: ' $srv_home
+echo 'script_path: ' $script_path
+echo 'base_dir: ' $base_dir
 echo 'project: ' $project
 
 ### Environment variables directed from primary ones
-export src=$base_dir/../../../app
-export config=$base_dir/../../../base
+export src=$base_dir/app
+export config=$base_dir/base
 export apphome=$srv_home/$project
 
 echo '### Environment variables directed from primary ones'

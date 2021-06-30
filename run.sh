@@ -1,2 +1,3 @@
  #!/usr/bin/env bash
- ./install/install.sh lab
+ source ./install/_build/macos/env.sh
+ ./install/install.sh macos
