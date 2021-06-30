@@ -17,7 +17,6 @@ fi
 echo '### Primary variables'
 echo 'srv_home: ' $srv_home
 echo 'script_path: ' $script_path
-echo 'base_dir: ' $base_dir
 echo 'project: ' $project
 
 ### Environment variables directed from primary ones
