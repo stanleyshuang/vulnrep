@@ -86,7 +86,7 @@ else: # cmd in ['standard', 'update']
         if sf_case_num:
             case_num, created_date, email, name, sf_data = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
             if case_num:
-                the_issue.set_sf_data(case_num, created_date, email, name)
+                the_issue.set_sf_data(created_date, email, name, sf_data)
     elif get_issuetype(issue)=='Bug':
         the_issue = vuln_bug(jira, issue)
     elif get_issuetype(issue)=='App Release Process':
@@ -96,11 +96,7 @@ else: # cmd in ['standard', 'update']
     else:
         quit()
 
-    issue_status = the_issue.run(downloads, b_update=(cmd=='update'))
-
-    ### update Status Update
-    if get_issuetype(issue)=='Task' and (cmd=='update') and sf_case_num and case_num:
-        the_issue.set_status(sf_data, issue_status)
+    the_issue.run(downloads, b_update=(cmd=='update'))
 
 if the_issue and mode=='verbose':
     the_issue.dump()

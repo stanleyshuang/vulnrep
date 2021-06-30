@@ -25,8 +25,8 @@ class vuln_bug(bug):
     '''
     def __init__(self, jira, issue):
         super(vuln_bug, self).__init__(jira, issue)
-        self.arp_counts = 0
-        self.frp_counts = 0
+        self.apprelease_counts = 0
+        self.fwrelease_counts = 0
         
     def collect_unresolved_issues(self):
         if self.b_unresolved_run:
@@ -35,8 +35,8 @@ class vuln_bug(bug):
         self.b_unresolved_run = True
         self.unresolved_counts = 0
         self.unresolved_issues = []
-        self.arp_counts = 0
-        self.frp_counts = 0
+        self.apprelease_counts = 0
+        self.fwrelease_counts = 0
 
         time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
         str_time = utc_to_local_str(time, format='%Y-%m-%d')
@@ -58,34 +58,35 @@ class vuln_bug(bug):
                 the_app_release.collect_unresolved_issues()
                 self.unresolved_counts += the_app.release_unresolved_counts
                 self.unresolved_issues.extend(the_app.release_unresolved_issues)
-                self.arp_counts += 1
+                self.apprelease_counts += 1
             elif get_issuetype(blocking_issue) == 'FW Release Process':
                 the_fw_release = fw_release_process(self.jira, blocking_issue)
                 the_fw_release.collect_unresolved_issues()
                 self.unresolved_counts += the_fw_release.unresolved_counts
                 self.unresolved_issues.extend(the_fw_release.unresolved_issues)
-                self.frp_counts += 1
+                self.fwrelease_counts += 1
 
     def run(self, downloads, b_update=False):
         issue_status = {}
-        b_solved, unresolved_counts, unresolved_issues = self.collect_unresolved_issues()
+        self.collect_unresolved_issues()
 
-        if self.get_status_name() in ['verified', 'abort']:
-            self.author, created, status = self.get_auther_and_created_in_changlog('status', ['verified', 'abort'])
-            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-        self.b_solved = status=='verified' and self.unresolved_counts==0 and self.arp_counts+self.frp_counts>0
-
+        status = self.get_status_name()
+        b_solved = status=='abort' or (status=='verified' and self.unresolved_counts==0 and self.apprelease_counts+self.fwrelease_counts>0)
         if b_solved:
-            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
+            author, created, status = self.get_auther_and_created_in_changlog('status', ['verified', 'abort'])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_created = utc_to_local_str(created, format='%Y-%m-%d')
+            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=author, str_created=str_created)
+            issue_status['author'] = author
+            issue_status['latest_updated'] = str_created
+            issue_status['issue_status'] = status
         else:
             issue_status['summary'] = 'NOT RESOLVED'
             issue_status['unsolved_cases'] = {}
-            issue_status['unsolved_cases']['counts'] = unresolved_counts
-            if len(unresolved_issues)>0:
-                issue_status['unsolved_cases']['cases'] = unresolved_issues
+            issue_status['unsolved_cases']['counts'] = self.unresolved_counts
+            if len(self.unresolved_issues)>0:
+                issue_status['unsolved_cases']['cases'] = self.unresolved_issues
         print(json.dumps(issue_status, indent=4))
-        return issue_status
 
 class fw_release_process(i_issue):
     '''
@@ -108,6 +109,7 @@ class fw_release_process(i_issue):
             time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_time = utc_to_local_str(time, format='%Y-%m-%d')
             str_eta = self.issue.raw['fields']["customfield_11504"]
+            self.unresolved_counts = 1
             self.unresolved_issues.append({
                     'key': self.issue.key,
                     'created': str_time,
@@ -116,28 +118,26 @@ class fw_release_process(i_issue):
                     'summary': self.issue.fields.summary,
                     'eta': str_eta
                 })
-            self.unresolved_counts = 1
 
     def run(self, downloads, b_update=False):
         issue_status = {}
-        b_solved, unresolved_counts, unresolved_issues = self.collect_unresolved_issues()
-        if self.get_status_name() in ['done', 'abort']:
-            self.author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
-            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-            self.b_solved = True
+        self.collect_unresolved_issues()
 
-        if b_solved:
-            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
+        if self.get_status_name() in ['done', 'abort']:
+            author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_created = utc_to_local_str(created, format='%Y-%m-%d')
+            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=author, str_created=str_created)
+            issue_status['author'] = author
+            issue_status['latest_updated'] = str_created
+            issue_status['issue_status'] = status
         else:
             issue_status['summary'] = 'NOT RESOLVED'
             issue_status['unsolved_cases'] = {}
-            issue_status['unsolved_cases']['counts'] = unresolved_counts
-            if len(unresolved_issues)>0:
-                issue_status['unsolved_cases']['cases'] = unresolved_issues
+            issue_status['unsolved_cases']['counts'] = self.unresolved_counts
+            if len(self.unresolved_issues)>0:
+                issue_status['unsolved_cases']['cases'] = self.unresolved_issues
         print(json.dumps(issue_status, indent=4))
-        return issue_status
-
 
 class app_release_process(i_issue):
     '''
@@ -161,6 +161,7 @@ class app_release_process(i_issue):
             str_time = utc_to_local_str(time, format='%Y-%m-%d')
             eta = self.issue.raw['fields']["customfield_11504"]
             str_eta = utc_to_local_str(eta, format='%Y-%m-%d')
+            self.unresolved_counts = 1
             self.unresolved_issues.append({
                     'key': self.issue.key,
                     'created': str_time,
@@ -169,26 +170,24 @@ class app_release_process(i_issue):
                     'summary': self.issue.fields.summary,
                     'eta': str_eta
                 })
-            self.unresolved_counts = 1
 
     def run(self, downloads, b_update=False):
         issue_status = {}
-        b_solved, unresolved_counts, unresolved_issues = self.collect_unresolved_issues()
+        self.collect_unresolved_issues()
 
         if self.get_status_name() in ['done', 'abort']:
-            self.author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
+            author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-            self.b_solved = True
-
-        if b_solved:
-            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
+            str_created = utc_to_local_str(created, format='%Y-%m-%d')
+            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=author, str_created=str_created)
+            issue_status['author'] = author
+            issue_status['latest_updated'] = str_created
+            issue_status['issue_status'] = status
         else:
             issue_status['summary'] = 'NOT RESOLVED'
             issue_status['unsolved_cases'] = {}
-            issue_status['unsolved_cases']['counts'] = unresolved_counts
-            if len(unresolved_issues)>0:
-                issue_status['unsolved_cases']['cases'] = unresolved_issues
+            issue_status['unsolved_cases']['counts'] = self.unresolved_counts
+            if len(self.unresolved_issues)>0:
+                issue_status['unsolved_cases']['cases'] = self.unresolved_issues
         print(json.dumps(issue_status, indent=4))
-        return issue_status
-
+        

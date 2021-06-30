@@ -30,7 +30,13 @@ class analysis_task(task):
         self.b_analysis_done = False
         self.b_verification_done = False
         self.b_apprelease_done = False
+        self.b_fwrelease_done = False
+        self.b_disclosure_done = False
         self.analysis_data = {}
+        self.verification_data = {}
+        self.apprelease_data = {}
+        self.fwrelease_data = {}
+        self.disclosure_data = {}
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -40,15 +46,22 @@ class analysis_task(task):
             return name.strip()
         return None
 
-    def set_sf_data(self, sf_case_num, created_date, researcher_email, researcher_name):
+    def set_sf_data(self, created_date, researcher_email, researcher_name, sf_data):
         print('Update SF Data')
         jira_id = self.issue.id
         summary = self.issue.fields.summary
         print('--- Jira [{jira_id}]{summary}'.format(jira_id=jira_id, summary=summary))
 
-        ### Update Salseforce link, researcher information
         description = self.issue.fields.description
         b_need_update, case_num, link, others = parse_salesforce_link(description)
+        
+        ### Update Salesforce
+        if sf_data and bool(sf_data):
+            self.sf_data = sf_data
+        if 'sf_link' not in self.sf_data:
+            self.sf_data['sf_link'] = link
+
+        ### Update Salseforce link, researcher information
         researcher_email_index = description.find(researcher_email)
         researcher_name_index = description.find(researcher_name)
         if b_need_update or researcher_email_index<0 or researcher_name_index<0:
@@ -93,15 +106,48 @@ class analysis_task(task):
         if self.issue.raw['fields']["customfield_11504"] != deadline_str:
             self.issue.update(fields={"customfield_11504": deadline_str})
             print('--- Update Finish ETA                    {deadline_str}'.format(deadline_str=deadline_str))
+                
+    def set_status(self):
+        print('Update Status')
+        ### Salseforce case_num, link, researcher information
+        description = self.issue.fields.description
+        b_need_update, case_num, link, others = parse_salesforce_link(description)
+
+        dict_customfield_13600 = {}
+        ### Update Salesforce
+        dict_customfield_13600['SF'] = self.sf_data
+
+        ### Update Analysis
+        dict_customfield_13600['ANALYSIS'] = self.analysis_data
+
+        ### Update Verification
+        dict_customfield_13600['VERIFICATION'] = self.verification_data
+
+        ### Update APP Release Process
+        dict_customfield_13600['APP_RELEASE_PROCESS'] = self.apprelease_data
+
+        ### Update FW Release Process
+        dict_customfield_13600['FW_RELEASE_PROCESS'] = self.fwrelease_data
+
+        ### Update Disclosure
+        dict_customfield_13600['DISCLOSURE'] = self.disclosure_data
+
+
+        # Status Update: customfield_13600
+        str_customfield_13600 = json.dumps(dict_customfield_13600, indent=4)
+        if self.issue.raw['fields']["customfield_13600"] != str_customfield_13600:
+            print('--- update Status Update (customfield_13600)')
+            self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
     def collect_analysis_result(self):
         '''
-        b_analysis_done:  analysis done or not
-        analysis_data:  {
-                            'author': analyst who gave the comment,
-                            'created': date time in format '2021-05-13',
-                            'summary': [analysis summary],
-                        }
+        b_analysis_done:    analysis done or not
+        analysis_data:      {
+                                'status': 'done' or 'on-going..',
+                                'author': analyst who gave the comment,
+                                'created': date time in format '2021-05-13',
+                                'summary': [analysis summary],
+                            }
         '''
         # print('Find analysis result')
         self.b_analysis_done = False
@@ -135,94 +181,6 @@ class analysis_task(task):
         if not self.b_analysis_done:
             # print('--- Analysis is on going')
             self.analysis_data['status'] = 'on-going..'
-        return self.b_analysis_done, self.analysis_data
-
-    def run(self, downloads, b_update=False):
-        '''
-        b_solved:           True or False
-        unresolved_counts:  The number of unsolved issues
-        unresolved_issues:  [{
-                                'key':      jira key
-                                'summary':  jira summary,
-                                'created':  date time in format '2021-05-13',
-                                'eta':      date time in format '2021-05-13',
-                            }]
-        '''
-        issue_status = {}
-        self.collect_analysis_result()
-        self.collect_unresolved_issues()
-
-        author, created, status = self.get_auther_and_created_in_changlog('status', [self.get_status_name()])
-        created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
-        self.str_created = utc_to_local_str(created, format='%Y-%m-%d')
-
-        if status not in ['close', 'abort']:
-            self.unresolved_counts += 1
-            time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            str_time = utc_to_local_str(time, format='%Y-%m-%d')
-            self.unresolved_issues.append({
-                    'key': self.issue.key,
-                    'created': str_time,
-                    'issuetype': get_issuetype(self.issue),
-                    'status': self.get_status_name(),
-                    'summary': self.issue.fields.summary,
-                })
-        self.b_solved = status in ['close', 'abort'] and self.unresolved_counts==0
-
-        self.download_cve_jsons(downloads)
-        if b_solved:
-            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=self.author, str_created=self.str_created)
-        else:
-            issue_status['summary'] = 'NOT RESOLVED'
-            issue_status['analysis'] = self.analysis_data
-
-            issue_status['verification'] = {}
-            if self.b_verification_done:
-                issue_status['verification']['status'] = 'done'
-
-            issue_status['apprelease'] = {}
-            if self.b_apprelease_done:
-                issue_status['apprelease']['status'] = 'all_uploaded'
-
-            issue_status['unsolved_cases'] = {}
-            issue_status['unsolved_cases']['counts'] = unresolved_counts
-            if len(unresolved_issues)>0:
-                issue_status['unsolved_cases']['cases'] = unresolved_issues
-
-        if self.b_solved:
-            issue_status['author'] = self.author
-            issue_status['latest_updated'] = self.str_created
-            issue_status['issue_status'] = status
-
-        print(json.dumps(issue_status, indent=4))
-        return issue_status
-                
-    def set_status(self, sf_data={}, 
-                   unsolved_data={}):
-        print('Update Status')
-        ### Salseforce case_num, link, researcher information
-        description = self.issue.fields.description
-        b_need_update, case_num, link, others = parse_salesforce_link(description)
-
-        dict_customfield_13600 = {}
-        ### Update Salesforce
-        if sf_data and bool(sf_data):
-            self.sf_data = sf_data
-        if 'sf_link' not in self.sf_data:
-            self.sf_data['sf_link'] = link
-        dict_customfield_13600['SF'] = self.sf_data
-
-        ### Update Analysis
-        dict_customfield_13600['ANALYSIS'] = self.analysis_data
-
-        if unsolved_data and bool(unsolved_data):
-            dict_customfield_13600['STATUS'] = unsolved_data
-
-        # Status Update: customfield_13600
-        str_customfield_13600 = json.dumps(dict_customfield_13600, indent=4)
-        if self.issue.raw['fields']["customfield_13600"] != str_customfield_13600:
-            print('--- update Status Update (customfield_13600)')
-            self.issue.update(fields={"customfield_13600": str_customfield_13600})
 
     def collect_unresolved_issues(self):
         from .bug import vuln_bug
@@ -234,6 +192,18 @@ class analysis_task(task):
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
+        if self.get_status_name() not in ['close', 'abort']:
+            self.unresolved_counts += 1
+            time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_time = utc_to_local_str(time, format='%Y-%m-%d')
+            self.unresolved_issues.append({
+                    'key': self.issue.key,
+                    'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status_name(),
+                    'summary': self.issue.fields.summary,
+                })
+
         self.search_blocked()
         ### enumerate blocked issues and find bugs in the anslysis task
         for blocked_issue in self.blocked_issues:
@@ -242,3 +212,160 @@ class analysis_task(task):
                 the_bug.collect_unresolved_issues()
                 self.unresolved_counts += the_bug.unresolved_counts
                 self.unresolved_issues.extend(the_bug.unresolved_issues)
+
+    def collect_verification_result(self):
+        '''
+        b_verification_done:    verification True or False
+        verification_data:      {   
+                                    'status': 'done' or 'on-going..',
+                                    'unresolved': [
+                                        'key':          jira key, 'INTSI000-1033',
+                                        'created':      date time in format '2021-05-13',
+                                        'status':       'done', 'verified', and so on,
+                                        'summary':      jira summary,
+                                    ]
+                                }
+        '''
+        # print('Find verification result')
+        self.b_verification_done = True
+        self.verification_data = {}
+        self.verification_data['status'] = 'done'
+
+        for unresolved_issue in self.unresolved_issues:
+            if unresolved_issue['issuetype']=='Bug':
+                if self.b_verification_done:
+                    self.b_verification_done = False
+                    self.verification_data['status'] = 'on-going..'
+                    self.verification_data['unresolved'] = []
+                self.verification_data['unresolved'].append({'key':      unresolved_issue['key'],
+                                                             'created':  unresolved_issue['created'],
+                                                             'status':   unresolved_issue['status'],
+                                                             'summary':  unresolved_issue['summary'],
+                                                            })
+
+    def collect_apprelease_result(self):
+        '''
+        b_apprelease_done:  apprelease True or False
+        apprelease_data:    {   
+                                'status': 'done' or 'on-going..',
+                                'unresolved': [
+                                    'key':      jira key, 'INTSI000-1033',
+                                    'created':  date time in format '2021-05-13',
+                                    'status':   'done', 'verified', and so on,
+                                    'summary':  jira summary,
+                                    'eta':      date time in format '2021-05-13',
+                                ]
+                            }
+        '''
+        # print('Find apprelease result')
+        self.b_apprelease_done = True
+        self.apprelease_data = {}
+        self.apprelease_data['status'] = 'done'
+
+        for unresolved_issue in self.unresolved_issues:
+            if unresolved_issue['issuetype']=='App Release Process':
+                if self.b_apprelease_done:
+                    self.b_apprelease_done = False
+                    self.apprelease_data['status'] = 'on-going..'
+                    self.apprelease_data['unresolved'] = []
+                self.apprelease_data['unresolved'].append({'key':      unresolved_issue['key'],
+                                                           'created':  unresolved_issue['created'],
+                                                           'status':   unresolved_issue['status'],
+                                                           'summary':  unresolved_issue['summary'],
+                                                           'eta':      unresolved_issue['eta'],
+                                                          })
+
+    def collect_fwrelease_result(self):
+        '''
+        b_fwrelease_done:  fwrelease True or False
+        fwrelease_data:    {   
+                                'status': 'done' or 'on-going..',
+                                'unresolved': [
+                                    'key':      jira key, 'INTSI000-1033',
+                                    'created':  date time in format '2021-05-13',
+                                    'status':   'done', 'verified', and so on,
+                                    'summary':  jira summary,
+                                    'eta':      date time in format '2021-05-13',
+                                ]
+                            }
+        '''
+        # print('Find fwrelease result')
+        self.b_fwrelease_done = True
+        self.fwrelease_data = {}
+        self.fwrelease_data['status'] = 'done'
+
+        for unresolved_issue in self.unresolved_issues:
+            if unresolved_issue['issuetype']=='FW Release Process':
+                if self.b_fwrelease_done:
+                    self.b_fwrelease_done = False
+                    self.fwrelease_data['status'] = 'on-going..'
+                    self.fwrelease_data['unresolved'] = []
+                self.fwrelease_data['unresolved'].append({'key':      unresolved_issue['key'],
+                                                           'created':  unresolved_issue['created'],
+                                                           'status':   unresolved_issue['status'],
+                                                           'summary':  unresolved_issue['summary'],
+                                                           'eta':      unresolved_issue['eta'],
+                                                          })
+
+    def collect_disclosure_result(self):
+        '''
+        b_disclosure_done:  disclosure True or False
+        disclosure_data:    {   
+                                'status': 'done' or 'on-going..',
+                                'disclosure': [
+                                    'key':      jira key, 'INTSI000-1033',
+                                    'created':  date time in format '2021-05-13',
+                                    'status':   'done', 'verified', and so on,
+                                ]
+                            }
+        '''
+        # print('Find disclosure result')
+        self.b_disclosure_done = True
+        self.disclosure_data = {}
+        self.disclosure_data['status'] = 'done'
+
+        for unresolved_issue in self.unresolved_issues:
+            if unresolved_issue['issuetype']=='Task':
+                if self.b_disclosure_done:
+                    self.b_disclosure_done = False
+                    self.disclosure_data['status'] = 'on-going..'
+                    self.disclosure_data['unresolved'] = []
+                self.disclosure_data['unresolved'].append({'key':      unresolved_issue['key'],
+                                                           'created':  unresolved_issue['created'],
+                                                           'status':   unresolved_issue['status'],
+                                                           'summary':  unresolved_issue['summary'],
+                                                          })
+
+    def run(self, downloads, b_update=False):
+        issue_status = {}
+        self.collect_unresolved_issues()
+        self.collect_analysis_result()
+        self.collect_verification_result()
+        self.collect_apprelease_result()
+        self.collect_fwrelease_result()
+        self.collect_disclosure_result()
+
+        status = self.get_status_name()
+        b_solved = status in ['close', 'abort'] and self.unresolved_counts==0
+        if b_solved:
+            author, created, status = self.get_auther_and_created_in_changlog('status', [status])
+            created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
+            str_created = utc_to_local_str(created, format='%Y-%m-%d')
+
+            issue_status['summary'] = 'RESOLVED, {author}, {str_created}'.format(author=author, str_created=str_created)
+            issue_status['author'] = author
+            issue_status['latest_updated'] = str_created
+            issue_status['issue_status'] = status
+        else:
+            issue_status['summary'] = 'NOT RESOLVED'
+            issue_status['analysis'] = self.analysis_data
+            issue_status['verification'] = self.verification_data
+            issue_status['app_release'] = self.apprelease_data
+            issue_status['fw_release'] = self.fwrelease_data
+            issue_status['disclosure'] = self.disclosure_data
+        print(json.dumps(issue_status, indent=4))
+        
+        ### update Status Update
+        if b_update and self.get_sf_case_num():
+            self.set_status()
+        self.download_cve_jsons(downloads)

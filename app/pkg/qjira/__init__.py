@@ -26,10 +26,6 @@ class i_issue():
         self.b_unresolved_run = False
         self.unresolved_counts = 0
         self.unresolved_issues = []
-
-        self.b_solved = False
-        self.author = ''
-        self.str_created = ''
         
     def get_status_name(self):
         return self.issue.fields.status.name.lower()
@@ -64,7 +60,49 @@ class i_issue():
 
     @abc.abstractmethod
     def collect_unresolved_issues(self):
+        '''
+        self.b_unresolved_run:  True or False
+        self.unresolved_counts: The number of unsolved issues
+        self.unresolved_issues: [{
+                                    'key':          jira key, 'INTSI000-1033',
+                                    'created':      date time in format '2021-05-13',
+                                    'issuetype':    'Bug', 'App Release Process' or 'FW Release Process',
+                                    'status':       'done', 'verified', and so on,
+                                    'summary':      jira summary,
+                                    'eta':          date time in format '2021-05-13',
+                                }]
+        '''
         pass
+    
+    def search_blocked(self):
+        # print('Searching Blocked Issue(s)')
+        if self.b_blocked_run:
+            return self.blocked_issues
+        self.b_blocked_run = True
+        self.blocked_issues = []
+        if 'issuelinks' in self.issue.raw['fields']:
+            for issue_link in self.issue.raw['fields']['issuelinks']:
+                if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
+                    blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'], expand='changelog')
+                    if blocking_issue:
+                        # print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
+                        self.blocked_issues.append(blocking_issue)
+        return self.blocked_issues
+
+    def search_blocking(self):
+        # print('Searching Blocking Issue(s)')
+        if self.b_blocking_run:
+            return self.blocking_issues
+        self.b_blocking_run = True
+        self.blocking_issues = []
+        if 'issuelinks' in self.issue.raw['fields']:
+            for issue_link in self.issue.raw['fields']['issuelinks']:
+                if 'outwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
+                    blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'], expand='changelog')
+                    if blocked_issue:
+                        # print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
+                        self.blocking_issues.append(blocked_issue)
+        return self.blocking_issues
 
     @abc.abstractmethod
     def dump(self):
@@ -149,34 +187,5 @@ class i_issue():
                             'the title', 'product name', version_data,
                             'description', 'url',
                             'solution', 'credit', 'qsa_id')
-    
-    def search_blocked(self):
-        # print('Searching Blocked Issue(s)')
-        if self.b_blocked_run:
-            return self.blocked_issues
-        self.b_blocked_run = True
-        self.blocked_issues = []
-        if 'issuelinks' in self.issue.raw['fields']:
-            for issue_link in self.issue.raw['fields']['issuelinks']:
-                if 'inwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
-                    blocking_issue = self.jira.issue(issue_link['inwardIssue']['key'], expand='changelog')
-                    if blocking_issue:
-                        # print('--- The issue BLOCKs {key}, {summary}'.format(key=blocking_issue.key, summary=blocking_issue.fields.summary))
-                        self.blocked_issues.append(blocking_issue)
-        return self.blocked_issues
-
-    def search_blocking(self):
-        # print('Searching Blocking Issue(s)')
-        if self.b_blocking_run:
-            return self.blocking_issues
-        self.b_blocking_run = True
-        self.blocking_issues = []
-        if 'issuelinks' in self.issue.raw['fields']:
-            for issue_link in self.issue.raw['fields']['issuelinks']:
-                if 'outwardIssue' in issue_link and issue_link['type']['name'] == 'Blocks':
-                    blocked_issue = self.jira.issue(issue_link['outwardIssue']['key'], expand='changelog')
-                    if blocked_issue:
-                        # print('--- The issue is BLOCKed {key}, {summary}'.format(key=blocked_issue.key, summary=blocked_issue.fields.summary))
-                        self.blocking_issues.append(blocked_issue)
-        return self.blocking_issues
+            
         
