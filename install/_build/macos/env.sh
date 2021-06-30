@@ -3,7 +3,6 @@
 ### Primary variables
 srv_home="/Users/$USER/srv"
 script_path="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-echo "basename: " $(basename $0)
 if [[ $(basename $0) == 'env.sh' ]]; then
   project="$(basename $(dirname $(dirname $(dirname $script_path))))"
   base_dir=$script_path/../../..
