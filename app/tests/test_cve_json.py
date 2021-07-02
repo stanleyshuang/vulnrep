@@ -14,15 +14,15 @@ class CveJsonTestCase(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def test_is_cve_json_filename(self):
+    def test_is_cve_json_filename_10(self):
         self.assertTrue(is_cve_json_filename('CVE-2021-28809'))
     
-    def test_is_cve_json_filename_2(self):
+    def test_is_cve_json_filename_20(self):
         self.assertTrue(is_cve_json_filename('CVE-2021-3660'))
     
-    def test_is_cve_json_filename_3(self):
+    def test_is_cve_json_filename_30(self):
         self.assertFalse(is_cve_json_filename('CVE-2021-3660.json'))
     
-    def test_is_cve_json_filename_4(self):
+    def test_is_cve_json_filename_40(self):
         self.assertFalse(is_cve_json_filename('openpgp-encrypted-message'))
         

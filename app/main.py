@@ -98,6 +98,6 @@ else: # cmd in ['standard', 'update']
 
     the_issue.run(downloads, b_update=(cmd=='update'))
 
-if the_issue and mode=='verbose':
-    the_issue.dump()
+    if the_issue and mode=='verbose':
+        the_issue.dump()
 

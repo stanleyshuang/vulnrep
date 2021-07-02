@@ -9,7 +9,8 @@ import json
 from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
-from .function import parse_salesforce_link
+from .comment import comment_parser, analysis_done_callback
+from .description import parse_salesforce_link
 
 class task(i_issue):
     '''
@@ -37,6 +38,7 @@ class analysis_task(task):
         self.apprelease_data = {}
         self.fwrelease_data = {}
         self.disclosure_data = {}
+        self.bug_counts = 0
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -155,26 +157,8 @@ class analysis_task(task):
         self.analysis_data['summary'] = []
         comments = self.issue.fields.comment.comments
         for comment in comments:
-            cid = comment.id
-            author = comment.author.displayName
-            time = datetime.strptime(comment.created, '%Y-%m-%dT%H:%M:%S.000+0800')
-            body = comment.body
-            lines = body.split('\n')
-            for line in lines:
-                security_idx = line.find('[Security]')
-                v1_idx = line.find('[V1]')
-                v2_idx = line.find('[V2]')
-                v3_idx = line.find('[V3]')
-                v4_idx = line.find('[V4]')
-                v5_idx = line.find('[V5]')
-                if security_idx>=0 and (v1_idx>=0 or v2_idx>=0 or v3_idx>=0 or v4_idx>=0 or v5_idx>=0):
-                    # print('--- Analysis is DONE as {line}'.format(line=line))
-                    if not self.b_analysis_done:
-                        self.b_analysis_done = True
-                        self.analysis_data['status'] = 'done'
-                        self.analysis_data['author'] = author
-                        self.analysis_data['created'] = utc_to_local_str(time, format='%Y-%m-%d')
-                    self.analysis_data['summary'].append(line)
+            comment_parser(self, comment, ['[Security]', ['[V1]', '[V2]', '[V3]', '[V4]', '[V5]']], analysis_done_callback)
+            
         if not self.b_analysis_done and self.get_status_name()=='abort':
             self.b_analysis_done = True
             self.analysis_data['status'] = 'done'
@@ -192,6 +176,15 @@ class analysis_task(task):
         self.unresolved_counts = 0
         self.unresolved_issues = []
 
+        self.search_blocked()
+        ### enumerate blocked issues and find bugs in the anslysis task
+        for blocked_issue in self.blocked_issues:
+            if get_issuetype(blocked_issue) == 'Bug':
+                the_bug = vuln_bug(self.jira, blocked_issue)
+                the_bug.collect_unresolved_issues()
+                self.unresolved_counts += the_bug.unresolved_counts
+                self.unresolved_issues.extend(the_bug.unresolved_issues)
+
         if self.get_status_name() not in ['close', 'abort']:
             self.unresolved_counts += 1
             time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
@@ -203,15 +196,6 @@ class analysis_task(task):
                     'status': self.get_status_name(),
                     'summary': self.issue.fields.summary,
                 })
-
-        self.search_blocked()
-        ### enumerate blocked issues and find bugs in the anslysis task
-        for blocked_issue in self.blocked_issues:
-            if get_issuetype(blocked_issue) == 'Bug':
-                the_bug = vuln_bug(self.jira, blocked_issue)
-                the_bug.collect_unresolved_issues()
-                self.unresolved_counts += the_bug.unresolved_counts
-                self.unresolved_issues.extend(the_bug.unresolved_issues)
 
     def collect_verification_result(self):
         '''
@@ -227,21 +211,26 @@ class analysis_task(task):
                                 }
         '''
         # print('Find verification result')
-        self.b_verification_done = True
         self.verification_data = {}
-        self.verification_data['status'] = 'done'
+        self.bug_counts = 0
 
         for unresolved_issue in self.unresolved_issues:
             if unresolved_issue['issuetype']=='Bug':
-                if self.b_verification_done:
-                    self.b_verification_done = False
-                    self.verification_data['status'] = 'on-going..'
+                if self.bug_counts==0:
                     self.verification_data['unresolved'] = []
+                self.bug_counts += 1
                 self.verification_data['unresolved'].append({'key':      unresolved_issue['key'],
                                                              'created':  unresolved_issue['created'],
                                                              'status':   unresolved_issue['status'],
                                                              'summary':  unresolved_issue['summary'],
                                                             })
+        if len(self.verification_data)!=0 or self.bug_counts==0:
+            self.b_verification_done = False
+            self.verification_data['status'] = 'on-going..'
+        else:
+            self.b_verification_done = True
+            self.verification_data['status'] = 'done'
+
 
     def collect_apprelease_result(self):
         '''
@@ -336,6 +325,10 @@ class analysis_task(task):
                                                            'summary':  unresolved_issue['summary'],
                                                           })
 
+    def resolved(self):
+        status = self.get_status_name()
+        return status in ['close', 'abort'] and self.unresolved_counts==0
+
     def run(self, downloads, b_update=False):
         issue_status = {}
         self.collect_unresolved_issues()
@@ -344,10 +337,8 @@ class analysis_task(task):
         self.collect_apprelease_result()
         self.collect_fwrelease_result()
         self.collect_disclosure_result()
-
-        status = self.get_status_name()
-        b_solved = status in ['close', 'abort'] and self.unresolved_counts==0
-        if b_solved:
+ 
+        if self.resolved():
             author, created, status = self.get_auther_and_created_in_changlog('status', [status])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_created = utc_to_local_str(created, format='%Y-%m-%d')

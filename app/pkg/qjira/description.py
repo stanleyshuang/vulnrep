@@ -5,6 +5,7 @@
 # Project:  vulnrep 1.0
 # Date:     2021-06-05
 #
+### common functions
 def extract_str_in_link(content):
     import re
     # regex to extract required strings
@@ -19,6 +20,8 @@ def extract_str_in_link(content):
         return True, res[0], res[len(res)-1], content[in_bracket.end():]
     return False, '', '', content
 
+### specific funstions
 def parse_salesforce_link(content):
     b_need_update, name, link, others = extract_str_in_link(content)
     return b_need_update, name, link, others
+    

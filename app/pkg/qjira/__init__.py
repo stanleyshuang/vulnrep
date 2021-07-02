@@ -55,6 +55,10 @@ class i_issue():
         print('Set', args, kwargs)
         
     @abc.abstractmethod
+    def resolved(self):
+        return False
+        
+    @abc.abstractmethod
     def run(self, downloads, b_update=False):
         print('Run')
 

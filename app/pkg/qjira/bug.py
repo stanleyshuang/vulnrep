@@ -38,18 +38,6 @@ class vuln_bug(bug):
         self.apprelease_counts = 0
         self.fwrelease_counts = 0
 
-        time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
-        str_time = utc_to_local_str(time, format='%Y-%m-%d')
-        if self.get_status_name() not in ['verified', 'abort']:
-            self.unresolved_counts += 1
-            self.unresolved_issues.append({
-                    'key': self.issue.key,
-                    'created': str_time,
-                    'issuetype': get_issuetype(self.issue),
-                    'status': self.get_status_name(),
-                    'summary': self.issue.fields.summary,
-                })
-
         self.search_blocking()
         ### enumberate blocking issues and find app release process in the bug
         for blocking_issue in self.blocking_issues:
@@ -66,13 +54,27 @@ class vuln_bug(bug):
                 self.unresolved_issues.extend(the_fw_release.unresolved_issues)
                 self.fwrelease_counts += 1
 
+        time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
+        str_time = utc_to_local_str(time, format='%Y-%m-%d')
+        if self.get_status_name() not in ['verified', 'abort']:
+            self.unresolved_counts += 1
+            self.unresolved_issues.append({
+                    'key': self.issue.key,
+                    'created': str_time,
+                    'issuetype': get_issuetype(self.issue),
+                    'status': self.get_status_name(),
+                    'summary': self.issue.fields.summary,
+                })
+
+    def resolved(self):
+        status = self.get_status_name()
+        return (status=='verified' and self.unresolved_counts==0 and self.apprelease_counts+self.fwrelease_counts>0) or status=='abort'
+
     def run(self, downloads, b_update=False):
         issue_status = {}
         self.collect_unresolved_issues()
 
-        status = self.get_status_name()
-        b_solved = status=='abort' or (status=='verified' and self.unresolved_counts==0 and self.apprelease_counts+self.fwrelease_counts>0)
-        if b_solved:
+        if self.resolved():
             author, created, status = self.get_auther_and_created_in_changlog('status', ['verified', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_created = utc_to_local_str(created, format='%Y-%m-%d')
@@ -109,7 +111,7 @@ class fw_release_process(i_issue):
             time = datetime.strptime(self.issue.fields.created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_time = utc_to_local_str(time, format='%Y-%m-%d')
             str_eta = self.issue.raw['fields']["customfield_11504"]
-            self.unresolved_counts = 1
+            self.unresolved_counts += 1
             self.unresolved_issues.append({
                     'key': self.issue.key,
                     'created': str_time,
@@ -119,11 +121,14 @@ class fw_release_process(i_issue):
                     'eta': str_eta
                 })
 
+    def resolved(self):
+        return self.get_status_name() in ['done', 'abort']
+
     def run(self, downloads, b_update=False):
         issue_status = {}
         self.collect_unresolved_issues()
 
-        if self.get_status_name() in ['done', 'abort']:
+        if self.resolved():
             author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_created = utc_to_local_str(created, format='%Y-%m-%d')
@@ -161,7 +166,7 @@ class app_release_process(i_issue):
             str_time = utc_to_local_str(time, format='%Y-%m-%d')
             eta = self.issue.raw['fields']["customfield_11504"]
             str_eta = utc_to_local_str(eta, format='%Y-%m-%d')
-            self.unresolved_counts = 1
+            self.unresolved_counts += 1
             self.unresolved_issues.append({
                     'key': self.issue.key,
                     'created': str_time,
@@ -171,11 +176,14 @@ class app_release_process(i_issue):
                     'eta': str_eta
                 })
 
+    def resolved(self):
+        return self.get_status_name() in ['done', 'abort']
+
     def run(self, downloads, b_update=False):
         issue_status = {}
         self.collect_unresolved_issues()
 
-        if self.get_status_name() in ['done', 'abort']:
+        if self.resolved():
             author, created, status = self.get_auther_and_created_in_changlog('status', ['done', 'abort'])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_created = utc_to_local_str(created, format='%Y-%m-%d')
