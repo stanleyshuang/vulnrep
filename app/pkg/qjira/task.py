@@ -383,10 +383,10 @@ class analysis_task(task):
         if b_update and self.get_sf_case_num():
             self.set_status()
         cve_json_files = self.download_cve_jsons(downloads, is_cve_json_filename)
-        for cve_json in cve_json_files:
+        for cve_json_file in cve_json_files:
             # modify cve json
-            filename, file_extension = os.path.splitext(cve_json)
-            output_file = filename + ".x.json"
+            cveid, json_ext = os.path.splitext(cve_json_file)
+            output_file = cveid + ".x.json"
             version_data = [    {   "platform": "platform 1",
                                     "version_affected": "<",
                                     "version_value": "1.0"
@@ -397,7 +397,7 @@ class analysis_task(task):
                                 },
 
             ]
-            modify_cve_json(cve_json, output_file, 
+            modify_cve_json(cve_json_file, output_file, 
                             'the title', 'product name', version_data,
                             'description', 'url',
                             'solution', 'credit', 'qsa_id')
