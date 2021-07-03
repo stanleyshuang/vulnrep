@@ -158,38 +158,20 @@ class i_issue():
             jira_filename = attachment.filename
             print('    {attachment}'.format(attachment=jira_filename))
 
-    def download_cve_jsons(self, downloads):
-        import os
-        from .cve_json import is_cve_json_filename, modify_cve_json
-
+    def download_cve_jsons(self, downloads, filter):
+        download_files = []
         for attachment in self.issue.fields.attachment:
             dot_idx = attachment.filename.find('.')
             if dot_idx>=0:
                 filename = attachment.filename[0:dot_idx]
             else:
                 filename = attachment.filename
-            if not is_cve_json_filename(filename):
+            if not filter(filename):
                 continue
             image = attachment.get()
             jira_filename = downloads + '/' + attachment.filename
+            download_files.append(jira_filename)
             with open(jira_filename, 'wb') as f:        
                 f.write(image)
-            # modify cve json
-            filename, file_extension = os.path.splitext(jira_filename)
-            output_file = filename + ".o.json"
-            version_data = [    {   "platform": "platform 1",
-                                    "version_affected": "<",
-                                    "version_value": "1.0"
-                                },
-                                {   "platform": "platform 2",
-                                    "version_affected": "<",
-                                    "version_value": "2.0"
-                                },
+        return download_files
 
-            ]
-            modify_cve_json(jira_filename, output_file, 
-                            'the title', 'product name', version_data,
-                            'description', 'url',
-                            'solution', 'credit', 'qsa_id')
-            
-        

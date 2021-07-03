@@ -5,11 +5,12 @@
 # Project:  vulnrep 1.0
 # Date:     2021-06-13
 #
-import json
+import json, os
 from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
 from .comment import comment_parser, analysis_done_callback
+from .cve_json import is_cve_json_filename, modify_cve_json
 from .description import parse_salesforce_link, parse_severity_leve_in_summary, severity_level_2_cvssv3_score
 
 class task(i_issue):
@@ -381,7 +382,25 @@ class analysis_task(task):
         ### update Status Update
         if b_update and self.get_sf_case_num():
             self.set_status()
-        self.download_cve_jsons(downloads)
+        cve_json_files = self.download_cve_jsons(downloads, is_cve_json_filename)
+        for cve_json in cve_json_files:
+            # modify cve json
+            filename, file_extension = os.path.splitext(cve_json)
+            output_file = filename + ".x.json"
+            version_data = [    {   "platform": "platform 1",
+                                    "version_affected": "<",
+                                    "version_value": "1.0"
+                                },
+                                {   "platform": "platform 2",
+                                    "version_affected": "<",
+                                    "version_value": "2.0"
+                                },
+
+            ]
+            modify_cve_json(cve_json, output_file, 
+                            'the title', 'product name', version_data,
+                            'description', 'url',
+                            'solution', 'credit', 'qsa_id')
 
     def create_emails_for_researcher(self):
         self.emails = {}

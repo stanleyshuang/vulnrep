@@ -72,7 +72,15 @@ create_folder(downloads)
 if cmd=='batch':
     jira = JIRA(basic_auth=(jira_username, jira_password), options={'server': jira_url})
     for an_issue in jira.search_issues('project = INTSI000 AND type = Task AND component = vulnerability_report ORDER BY key ASC'):
-        run_analyze_task(jira, an_issue, downloads, b_update=True)
+        the_issue = analysis_task(jira, an_issue)
+        the_issue = analysis_task(jira, an_issue)
+        ### get and set SF data
+        sf_case_num = the_issue.get_sf_case_num()
+        if sf_case_num:
+            case_num, created_date, email, name, sf_data = sf_get_data(salesforce_orgid, salesforce_username, salesforce_password, sf_case_num)
+            if case_num:
+                the_issue.set_sf_data(created_date, email, name, sf_data)
+        the_issue.run(downloads, b_update=True)
 elif cmd=='test':
     import unittest
     tests = unittest.TestLoader().discover('tests')
