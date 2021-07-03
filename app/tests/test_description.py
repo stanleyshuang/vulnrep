@@ -26,5 +26,17 @@ class SeverityLevel2Cvssv3ScoreTestCase(unittest.TestCase):
         pass
     
     def test_severity_level_2_cvssv3_score_10(self):
+        self.assertTrue('0.0', '1.9'==severity_level_2_cvssv3_score('[V1]'))
+    
+    def test_severity_level_2_cvssv3_score_20(self):
+        self.assertTrue('2.0', '3.9'==severity_level_2_cvssv3_score('[V2]'))
+    
+    def test_severity_level_2_cvssv3_score_30(self):
         self.assertTrue('4.0', '6.9'==severity_level_2_cvssv3_score('[V3]'))
+    
+    def test_severity_level_2_cvssv3_score_40(self):
+        self.assertTrue('7.0', '8.9'==severity_level_2_cvssv3_score('[V4]'))
+    
+    def test_severity_level_2_cvssv3_score_50(self):
+        self.assertTrue('9.0', '10.0'==severity_level_2_cvssv3_score('[V5]'))
 

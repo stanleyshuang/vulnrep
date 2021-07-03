@@ -142,6 +142,9 @@ class analysis_task(task):
         ### Update Disclosure
         dict_customfield_13600['DISCLOSURE'] = self.disclosure_data
 
+        ### Update emails
+        dict_customfield_13600['EMAILS'] = self.emails
+
 
         # Status Update: customfield_13600
         str_customfield_13600 = json.dumps(dict_customfield_13600, indent=4)
