@@ -158,7 +158,7 @@ class i_issue():
             jira_filename = attachment.filename
             print('    {attachment}'.format(attachment=jira_filename))
 
-    def download_cve_jsons(self, downloads, filter):
+    def download_attachments(self, downloads, filter):
         download_files = []
         for attachment in self.issue.fields.attachment:
             dot_idx = attachment.filename.find('.')

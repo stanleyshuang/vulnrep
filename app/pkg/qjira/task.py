@@ -383,26 +383,8 @@ class analysis_task(task):
         if b_update and self.get_sf_case_num():
             self.set_status()
 
-        cve_json_files = self.download_cve_jsons(downloads, is_cve_json_filename)
-        for cve_json_file in cve_json_files:
-            # modify cve json
-            cveid, json_ext = os.path.splitext(cve_json_file)
-            output_file = cveid + ".x.json"
-            version_data = [    {   "platform": "platform 1",
-                                    "version_affected": "<",
-                                    "version_value": "1.0"
-                                },
-                                {   "platform": "platform 2",
-                                    "version_affected": "<",
-                                    "version_value": "2.0"
-                                },
-
-            ]
-            modify_cve_json(cve_json_file, output_file, 
-                            'the title', 'product name', version_data,
-                            'description', 'url',
-                            'solution', 'credit', 'qsa_id')
-            # self.jira.add_attachment(issue=self.issue, attachment=output_file, filename=cve_json_file)
+        cve_json_files = self.download_attachments(downloads, is_cve_json_filename)
+        self.prepare_cve_jsons(cve_json_files)
 
     def create_emails_for_researcher(self):
         self.emails = {}
@@ -444,3 +426,24 @@ class analysis_task(task):
                                                       vuln_analysis_statement=vuln_analysis_statement)
             if len(summary)>0:
                 self.emails['rating'] = rating
+
+    def prepare_cve_jsons(self, cve_json_files):
+        for cve_json_file in cve_json_files:
+            # modify cve json
+            cveid, json_ext = os.path.splitext(cve_json_file)
+            output_file = cveid + ".x.json"
+            version_data = [    {   "platform": "platform 1",
+                                    "version_affected": "<",
+                                    "version_value": "1.0"
+                                },
+                                {   "platform": "platform 2",
+                                    "version_affected": "<",
+                                    "version_value": "2.0"
+                                },
+
+            ]
+            modify_cve_json(cve_json_file, output_file, 
+                            'the title', 'product name', version_data,
+                            'description', 'url',
+                            'solution', 'credit', 'qsa_id')
+            # self.jira.add_attachment(issue=self.issue, attachment=output_file, filename=cve_json_file)
