@@ -9,14 +9,19 @@ import datetime, re
 
 def is_cve_json_filename(filename):
     # CVE regular expression
-    cve_pattern = r'^CVE-\d{4}-\d{4,7}$'
+    cve_pattern = r'^CVE-\d{4}-\d{4,7}.json$'
     is_cve = re.match(cve_pattern, filename)
     return is_cve
 
-def modify_cve_json(input_file, output_file, 
-                    title, product_name, version_data,
-                    description, url,
-                    solution, credit, qsa_id):
+def is_cve_x_json_filename(filename):
+    cve_x_pattern = r'^CVE-\d{4}-\d{4,7}(.x)+.json$'
+    is_cve_x = re.match(cve_x_pattern, filename)
+    return is_cve_x
+
+def cve_json_complete(input_file, output_file, 
+                      title, product_name, version_data,
+                      description, url,
+                      solution, credit, qsa_id):
     from pkg.util.util_text_file import open_json, dump_json
 
     ### read json file into dict

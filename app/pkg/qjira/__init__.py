@@ -154,19 +154,13 @@ class i_issue():
                 changelog.append(d)
         print('--- attachements')
         for attachment in self.issue.fields.attachment:    
-            image = attachment.get()    
-            jira_filename = attachment.filename
-            print('    {attachment}'.format(attachment=jira_filename))
+            image = attachment.get()
+            print('    {attachment} {id}'.format(attachment=attachment.filename, id=attachment.id))
 
     def download_attachments(self, downloads, filter):
         download_files = []
         for attachment in self.issue.fields.attachment:
-            dot_idx = attachment.filename.find('.')
-            if dot_idx>=0:
-                filename = attachment.filename[0:dot_idx]
-            else:
-                filename = attachment.filename
-            if not filter(filename):
+            if not filter(attachment.filename):
                 continue
             image = attachment.get()
             jira_filename = downloads + '/' + attachment.filename
@@ -174,4 +168,10 @@ class i_issue():
             with open(jira_filename, 'wb') as f:        
                 f.write(image)
         return download_files
+
+    def remove_attachments(self, filter):
+        for attachment in self.issue.fields.attachment:
+            if not filter(attachment.filename):
+                continue
+            self.jira.delete_attachment(attachment.id)
 

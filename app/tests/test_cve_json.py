@@ -6,6 +6,7 @@
 #
 import unittest
 from pkg.qjira.cve_json import is_cve_json_filename
+from pkg.qjira.cve_json import is_cve_x_json_filename
 
 class CveJsonTestCase(unittest.TestCase):
     def setUp(self):
@@ -15,14 +16,51 @@ class CveJsonTestCase(unittest.TestCase):
         pass
     
     def test_is_cve_json_filename_10(self):
-        self.assertTrue(is_cve_json_filename('CVE-2021-28809'))
+        self.assertTrue(is_cve_json_filename('CVE-2021-28809.json'))
+    
+    def test_is_cve_json_filename_11(self):
+        self.assertFalse(is_cve_json_filename('CVE-2021-28809.x.json'))
     
     def test_is_cve_json_filename_20(self):
-        self.assertTrue(is_cve_json_filename('CVE-2021-3660'))
+        self.assertTrue(is_cve_json_filename('CVE-2021-3660.json'))
+    
+    def test_is_cve_json_filename_21(self):
+        self.assertFalse(is_cve_json_filename('CVE-2021-3660.x.json'))
     
     def test_is_cve_json_filename_30(self):
-        self.assertFalse(is_cve_json_filename('CVE-2021-3660.json'))
+        self.assertFalse(is_cve_json_filename('CVE-2021-3660.txt'))
     
     def test_is_cve_json_filename_40(self):
         self.assertFalse(is_cve_json_filename('openpgp-encrypted-message'))
+
+class CveJsonXTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+    
+    def test_is_cve_x_json_filename_10(self):
+        self.assertTrue(is_cve_x_json_filename('CVE-2021-28809.x.json'))
+    
+    def test_is_cve_x_json_filename_11(self):
+        self.assertFalse(is_cve_x_json_filename('CVE-2021-28809.json'))
+    
+    def test_is_cve_x_json_filename_12(self):
+        self.assertTrue(is_cve_x_json_filename('CVE-2021-28809.x.x.json'))
+    
+    def test_is_cve_x_json_filename_20(self):
+        self.assertTrue(is_cve_x_json_filename('CVE-2021-3660.x.json'))
+    
+    def test_is_cve_x_json_filename_21(self):
+        self.assertFalse(is_cve_x_json_filename('CVE-2021-3660.json'))
+    
+    def test_is_cve_x_json_filename_22(self):
+        self.assertTrue(is_cve_x_json_filename('CVE-2021-3660.x.x.json'))
+    
+    def test_is_cve_x_json_filename_30(self):
+        self.assertFalse(is_cve_x_json_filename('CVE-2021-3660.x.txt'))
+    
+    def test_is_cve_x_json_filename_40(self):
+        self.assertFalse(is_cve_x_json_filename('openpgp-encrypted-message'))
         

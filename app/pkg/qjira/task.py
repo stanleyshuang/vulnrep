@@ -10,7 +10,7 @@ from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
 from .comment import comment_parser, analysis_done_callback
-from .cve_json import is_cve_json_filename, modify_cve_json
+from .cve_json import is_cve_json_filename, is_cve_x_json_filename, cve_json_complete
 from .description import parse_salesforce_link, parse_severity_leve_in_summary, severity_level_2_cvssv3_score
 
 class task(i_issue):
@@ -384,6 +384,7 @@ class analysis_task(task):
             self.set_status()
 
         cve_json_files = self.download_attachments(downloads, is_cve_json_filename)
+        self.remove_attachments(is_cve_x_json_filename)
         self.prepare_cve_jsons(cve_json_files)
 
     def create_emails_for_researcher(self):
@@ -442,8 +443,8 @@ class analysis_task(task):
                                 },
 
             ]
-            modify_cve_json(cve_json_file, output_file, 
-                            'the title', 'product name', version_data,
-                            'description', 'url',
-                            'solution', 'credit', 'qsa_id')
-            # self.jira.add_attachment(issue=self.issue, attachment=output_file, filename=cve_json_file)
+            cve_json_complete(cve_json_file, output_file, 
+                              'the title', 'product name', version_data,
+                              'description', 'url',
+                              'solution', 'credit', 'qsa_id')
+            # self.jira.add_attachment(issue=self.issue, attachment=output_file)
