@@ -5,7 +5,7 @@
 # Date:     2021/07/02
 #
 import unittest
-from pkg.qjira.function import content_filter
+from pkg.qjira.comment import content_filter
 
 class ContentFilterTestCase(unittest.TestCase):
     def setUp(self):

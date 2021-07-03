@@ -5,6 +5,7 @@
 # Project:  vulnrep 1.0
 # Date:     2021-06-05
 #
+###############################################################################
 ### common functions
 def content_filter(content, filters, b_op_and=True):
     if b_op_and:
@@ -39,6 +40,7 @@ def comment_parser(the_obj, comment, filters, callback):
             # print('--- Analysis is DONE as {line}'.format(line=line))
             callback(the_obj, cid, author, time, line)
 
+###############################################################################
 ### specific funstions
 def analysis_done_callback(the_obj, cid, author, time, line):
     from pkg.util.util_datetime import utc_to_local_str
@@ -49,3 +51,4 @@ def analysis_done_callback(the_obj, cid, author, time, line):
         the_obj.analysis_data['author'] = author
         the_obj.analysis_data['created'] = utc_to_local_str(time, format='%Y-%m-%d')
     the_obj.analysis_data['summary'].append(line)
+

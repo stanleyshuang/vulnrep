@@ -10,7 +10,7 @@ from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
 from .comment import comment_parser, analysis_done_callback
-from .description import parse_salesforce_link
+from .description import parse_salesforce_link, parse_severity_leve_in_summary, severity_level_2_cvssv3_score
 
 class task(i_issue):
     '''
@@ -27,18 +27,26 @@ class analysis_task(task):
     '''
     def __init__(self, jira, issue):
         super(analysis_task, self).__init__(jira, issue)
+        # salesforce data
         self.sf_data = {}
+
+        # data flags
         self.b_analysis_done = False
         self.b_verification_done = False
         self.b_apprelease_done = False
         self.b_fwrelease_done = False
         self.b_disclosure_done = False
+
+        # status for each phase
         self.analysis_data = {}
         self.verification_data = {}
         self.apprelease_data = {}
         self.fwrelease_data = {}
         self.disclosure_data = {}
-        self.bug_counts = 0
+        self.bug_counts = 0 # the number of Bug issues
+
+        # email to researcher
+        self.emails = {}
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -337,6 +345,7 @@ class analysis_task(task):
         self.collect_apprelease_result()
         self.collect_fwrelease_result()
         self.collect_disclosure_result()
+        self.create_emails_for_researcher()
  
         if self.resolved():
             author, created, status = self.get_auther_and_created_in_changlog('status', [status])
@@ -354,9 +363,50 @@ class analysis_task(task):
             issue_status['app_release'] = self.apprelease_data
             issue_status['fw_release'] = self.fwrelease_data
             issue_status['disclosure'] = self.disclosure_data
+            issue_status['emails'] = self.emails
         print(json.dumps(issue_status, indent=4))
         
         ### update Status Update
         if b_update and self.get_sf_case_num():
             self.set_status()
         self.download_cve_jsons(downloads)
+
+    def create_emails_for_researcher(self):
+        self.emails = {}
+        ### email to notify the researcher that analysis is done
+        if self.b_analysis_done:
+            vul_rating = {}
+            # subject
+            subject = ''
+            summary = self.analysis_data['summary']
+            if len(summary)>1:
+                subject = self.issue.fields.summary
+            elif len(summary)==1:
+                subject = summary[0]
+            vul_rating['subject'] = '{case_num} {subject}'.format(case_num=self.sf_data['case_num'], subject=subject)
+
+            # receiver
+            vul_rating['receiver'] = self.sf_data['researcher_email']
+
+            # mail_body
+            mail_template = 'Hi {researcher_name}\n' \
+                            'Nice to hear from you. We received your vulnerability report and the initial triage results are listed below.\n' \
+                            '{vuln_analysis_statement}\n' \
+                            'Do you agree with the triage results? In addition, do you have any plan to disclose the vulnerabilities?\n' \
+                            'Best regards'
+            vuln_analysis_statement = ''
+    
+            for item in summary:
+                severity_level = parse_severity_leve_in_summary(item)
+                low, high = severity_level_2_cvssv3_score(severity_level)
+                vuln_analysis_statement += '- {case_num} {subject}\n' \
+                                           'Valid, the severity level is {severity_level} ' \
+                                           'which is CVSSv3 Score {low} - {high}.\n'.format(
+                                                case_num=self.sf_data['case_num'], 
+                                                subject=item,
+                                                severity_level=severity_level,
+                                                low=low,
+                                                high=high)
+            vul_rating['body'] = mail_template.format(researcher_name=self.sf_data['researcher_name'],
+                                                      vuln_analysis_statement=vuln_analysis_statement)
+            self.emails['vul_rating'] = vul_rating
