@@ -6,6 +6,7 @@
 #
 import unittest
 from pkg.qjira.description import parse_severity_leve_in_summary
+from pkg.qjira.description import parse_cveid_in_summary
 from pkg.qjira.description import severity_level_2_cvssv3_score
 
 class ParseSeverityleveInSummaryTestCase(unittest.TestCase):
@@ -17,6 +18,19 @@ class ParseSeverityleveInSummaryTestCase(unittest.TestCase):
     
     def test_parse_severity_leve_in_summary_10(self):
         self.assertTrue('[V3]'==parse_severity_leve_in_summary('[INTSI000-1023][Web][Security][Medium][V3] CSRF leads to change account settings of a victim (Mark Ella)'))
+
+class ParseCveidInSummaryTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+    
+    def test_parse_cveid_in_summary_10(self):
+        self.assertTrue(None==parse_cveid_in_summary('[INTSI000-1023][Web][Security][Medium][V3] CSRF leads to change account settings of a victim (Mark Ella)'))
+
+    def test_parse_cveid_in_summary_20(self):
+        self.assertTrue('CVE-2021-28815'==parse_cveid_in_summary('[QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink - CVE-2021-28815 (xxyantixx)'))
 
 class SeverityLevel2Cvssv3ScoreTestCase(unittest.TestCase):
     def setUp(self):

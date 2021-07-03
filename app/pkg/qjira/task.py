@@ -382,6 +382,7 @@ class analysis_task(task):
         ### update Status Update
         if b_update and self.get_sf_case_num():
             self.set_status()
+
         cve_json_files = self.download_cve_jsons(downloads, is_cve_json_filename)
         for cve_json_file in cve_json_files:
             # modify cve json
@@ -401,6 +402,7 @@ class analysis_task(task):
                             'the title', 'product name', version_data,
                             'description', 'url',
                             'solution', 'credit', 'qsa_id')
+            # self.jira.add_attachment(issue=self.issue, attachment=output_file, filename=cve_json_file)
 
     def create_emails_for_researcher(self):
         self.emails = {}

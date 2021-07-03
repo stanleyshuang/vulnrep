@@ -37,6 +37,15 @@ def parse_severity_leve_in_summary(content):
         return m.group(0)
     return None
 
+def parse_cveid_in_summary(content):
+    '''
+    example: [INTSI000-1025][Web][Security][Medium][V3] User Account hacking -> https://license2.qnap.com (Mark Ella)
+    '''
+    m = re.search(r"(CVE-\d{4}-\d{4,7})", content)
+    if m:
+        return m.group(0)
+    return None
+
 def severity_level_2_cvssv3_score(severity_level):
     severity2cvss = { '[V1]': ['0.0', '1.9'],
                       '[V2]': ['2.0', '3.9'],
