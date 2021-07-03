@@ -166,14 +166,15 @@ class analysis_task(task):
         self.b_analysis_done = False
         self.analysis_data = {}
         self.analysis_data['summary'] = []
+
         comments = self.issue.fields.comment.comments
         for comment in comments:
             comment_parser(self, comment, ['[Security]', ['[V1]', '[V2]', '[V3]', '[V4]', '[V5]']], analysis_done_callback)
-            
-        if not self.b_analysis_done and self.get_status_name()=='abort':
+
+        if not self.b_analysis_done and self.get_status_name() in ['abort', 'close']:
             self.b_analysis_done = True
             self.analysis_data['status'] = 'done'
-        if not self.b_analysis_done:
+        else:
             # print('--- Analysis is on going')
             self.analysis_data['status'] = 'on-going..'
 
@@ -235,7 +236,7 @@ class analysis_task(task):
                                                              'status':   unresolved_issue['status'],
                                                              'summary':  unresolved_issue['summary'],
                                                             })
-        if len(self.verification_data)!=0 or self.bug_counts==0:
+        if not self.b_analysis_done or len(self.verification_data)!=0 or self.bug_counts==0:
             self.b_verification_done = False
             self.verification_data['status'] = 'on-going..'
         else:
@@ -260,13 +261,11 @@ class analysis_task(task):
         # print('Find apprelease result')
         self.b_apprelease_done = True
         self.apprelease_data = {}
-        self.apprelease_data['status'] = 'done'
 
         for unresolved_issue in self.unresolved_issues:
             if unresolved_issue['issuetype']=='App Release Process':
                 if self.b_apprelease_done:
                     self.b_apprelease_done = False
-                    self.apprelease_data['status'] = 'on-going..'
                     self.apprelease_data['unresolved'] = []
                 self.apprelease_data['unresolved'].append({'key':      unresolved_issue['key'],
                                                            'created':  unresolved_issue['created'],
@@ -274,6 +273,12 @@ class analysis_task(task):
                                                            'summary':  unresolved_issue['summary'],
                                                            'eta':      unresolved_issue['eta'],
                                                           })
+        if not self.b_apprelease_done and len(self.apprelease_data['unresolved'])>0:
+            self.apprelease_data['status'] = 'on-going..'
+        elif not self.b_verification_done:
+            self.apprelease_data['status'] = 'not started'
+        else:
+            self.apprelease_data['status'] = 'done'
 
     def collect_fwrelease_result(self):
         '''
@@ -292,20 +297,24 @@ class analysis_task(task):
         # print('Find fwrelease result')
         self.b_fwrelease_done = True
         self.fwrelease_data = {}
-        self.fwrelease_data['status'] = 'done'
 
         for unresolved_issue in self.unresolved_issues:
             if unresolved_issue['issuetype']=='FW Release Process':
                 if self.b_fwrelease_done:
                     self.b_fwrelease_done = False
-                    self.fwrelease_data['status'] = 'on-going..'
                     self.fwrelease_data['unresolved'] = []
                 self.fwrelease_data['unresolved'].append({'key':      unresolved_issue['key'],
-                                                           'created':  unresolved_issue['created'],
-                                                           'status':   unresolved_issue['status'],
-                                                           'summary':  unresolved_issue['summary'],
-                                                           'eta':      unresolved_issue['eta'],
+                                                          'created':  unresolved_issue['created'],
+                                                          'status':   unresolved_issue['status'],
+                                                          'summary':  unresolved_issue['summary'],
+                                                          'eta':      unresolved_issue['eta'],
                                                           })
+        if not self.b_fwrelease_done and len(self.fwrelease_data['unresolved'])>0:
+            self.fwrelease_data['status'] = 'on-going..'
+        elif not self.b_verification_done:
+            self.fwrelease_data['status'] = 'not started'
+        else:
+            self.fwrelease_data['status'] = 'done'
 
     def collect_disclosure_result(self):
         '''
@@ -333,7 +342,7 @@ class analysis_task(task):
                 self.disclosure_data['unresolved'].append({'key':      unresolved_issue['key'],
                                                            'created':  unresolved_issue['created'],
                                                            'status':   unresolved_issue['status'],
-                                                           'summary':  unresolved_issue['summary'],
+                                                           # 'summary':  unresolved_issue['summary'],
                                                           })
 
     def resolved(self):
@@ -351,7 +360,7 @@ class analysis_task(task):
         self.create_emails_for_researcher()
  
         if self.resolved():
-            author, created, status = self.get_auther_and_created_in_changlog('status', [status])
+            author, created, status = self.get_auther_and_created_in_changlog('status', [self.get_status_name()])
             created = datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.000+0800')
             str_created = utc_to_local_str(created, format='%Y-%m-%d')
 
@@ -378,7 +387,7 @@ class analysis_task(task):
         self.emails = {}
         ### email to notify the researcher that analysis is done
         if self.b_analysis_done:
-            vul_rating = {}
+            rating = {}
             # subject
             subject = ''
             summary = self.analysis_data['summary']
@@ -386,10 +395,10 @@ class analysis_task(task):
                 subject = self.issue.fields.summary
             elif len(summary)==1:
                 subject = summary[0]
-            vul_rating['subject'] = '{case_num} {subject}'.format(case_num=self.sf_data['case_num'], subject=subject)
+            rating['subject'] = '{case_num} {subject}'.format(case_num=self.sf_data['case_num'], subject=subject)
 
             # receiver
-            vul_rating['receiver'] = self.sf_data['researcher_email']
+            rating['receiver'] = self.sf_data['researcher_email']
 
             # mail_body
             mail_template = 'Hi {researcher_name}\n' \
@@ -410,6 +419,7 @@ class analysis_task(task):
                                                 severity_level=severity_level,
                                                 low=low,
                                                 high=high)
-            vul_rating['body'] = mail_template.format(researcher_name=self.sf_data['researcher_name'],
+            rating['body'] = mail_template.format(researcher_name=self.sf_data['researcher_name'],
                                                       vuln_analysis_statement=vuln_analysis_statement)
-            self.emails['vul_rating'] = vul_rating
+            if len(summary)>0:
+                self.emails['rating'] = rating
