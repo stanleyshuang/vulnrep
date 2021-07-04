@@ -48,6 +48,16 @@ def extract_cveid(content):
         return m.group(0)
     return None
 
+def extract_cweid(content):
+    '''
+    example:    CWE-798 Use of Hard-coded Credentials
+    return      CWE-798
+    '''
+    m = re.search(r"(CWE-\d{3})", content)
+    if m:
+        return m.group(0)
+    return None
+
 def extract_sa_title(content):
     '''
     example:     INTSI000-732[QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink - CVE-2021-28815 (xxyantixx)
@@ -75,6 +85,28 @@ def extract_sa_title(content):
     satitle = satitle.strip(' -\u00a0')
     # print(satitle)
     return satitle
+
+def extract_pf_pt_ver(content):
+    '''
+    example:    [CVE-2021-28815][FIX]: [QTS 4.5.3] [myQNAPcloud Link] [2.2.21]
+    return:     [QTS 4.5.3, myQNAPcloud Link, 2.2.21]
+    '''
+    version_data = []
+    idx = content.find('[FIX]:')
+    if idx>=0:
+        idx_head = 0
+        idx_tail = 0
+        pf_pt_ver = content[idx+len('[FIX]:'):]
+        while idx_head>=0 and idx_tail>=0:
+            idx_head = pf_pt_ver.find('[', idx_head)
+            idx_tail = pf_pt_ver.find(']', idx_tail)
+            if idx_head<0 or idx_tail<0:
+                break
+            item = pf_pt_ver[idx_head+1:idx_tail]
+            version_data.append(item)
+            idx_head += 1
+            idx_tail += 1
+    return version_data
 
 def severity_level_2_cvssv3_score(severity_level):
     severity2cvss = { '[V1]': ['0.0', '1.9'],

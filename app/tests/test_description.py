@@ -7,7 +7,9 @@
 import unittest
 from pkg.qjira.description import extract_severity_level
 from pkg.qjira.description import extract_cveid
+from pkg.qjira.description import extract_cweid
 from pkg.qjira.description import extract_sa_title
+from pkg.qjira.description import extract_pf_pt_ver
 from pkg.qjira.description import severity_level_2_cvssv3_score
 
 class ExtractSeveritylevelTestCase(unittest.TestCase):
@@ -32,6 +34,19 @@ class ExtractCveidTestCase(unittest.TestCase):
 
     def test_extract_cveid_20(self):
         self.assertTrue('CVE-2021-28815'==extract_cveid('[QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink - CVE-2021-28815 (xxyantixx)'))
+
+class ExtractCweidTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+    
+    def test_extract_cweid_10(self):
+        self.assertTrue('CWE-798'==extract_cweid('CWE-798 Use of Hard-coded Credentials'))
+
+    def test_extract_cweid_20(self):
+        self.assertTrue(None==extract_cweid('Hello World'))
 
 class ExtractSaTitleTestCase(unittest.TestCase):
     def setUp(self):
@@ -66,6 +81,22 @@ class ExtractSaTitleTestCase(unittest.TestCase):
         
     def test_extract_sa_title_90(self):
         self.assertTrue('Use of Hard-coded Credentials'==extract_sa_title('[QSS][Security][High][V4] Use of Hard-coded Credentials - CVE-2021-28813 (Sergey)'))
+
+class ExtractPfPtVerTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+    
+    def test_extract_pf_pt_ver_10(self):
+        self.assertTrue(['QTS 4.5.3', 'myQNAPcloud Link', '2.2.21']==extract_pf_pt_ver('[CVE-2021-28815][FIX]: [QTS 4.5.3] [myQNAPcloud Link] [2.2.21]'))
+
+    def test_extract_pf_pt_ver_20(self):
+        self.assertTrue(['QuTS hero h4.5.2', 'myQNAPcloud Link', '2.2.21']==extract_pf_pt_ver('[CVE-2021-28815][FIX]: [QuTS hero h4.5.2] [myQNAPcloud Link] [2.2.21]'))
+
+    def test_extract_pf_pt_ver_30(self):
+        self.assertTrue(['QuTScloud c4.5.4', 'myQNAPcloud Link', '2.2.21']==extract_pf_pt_ver('[CVE-2021-28815][FIX]: [QuTScloud c4.5.4] [myQNAPcloud Link] [2.2.21]'))
 
 class SeverityLevel2Cvssv3ScoreTestCase(unittest.TestCase):
     def setUp(self):

@@ -9,8 +9,8 @@ import json, os
 from datetime import datetime
 from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
-from .comment import comment_parser, analysis_done_callback
-from .cve_json import is_cve_json_filename, is_cve_x_json_filename, cve_json_complete
+from .comment import comment_parser, analysis_done_callback, qsa_callback
+from .cve_json import is_cve_json_filename, is_cve_x_json_filename, cve_json_complete, make_description
 from .description import parse_salesforce_link, severity_level_2_cvssv3_score
 from .description import extract_severity_level, extract_cveid, extract_sa_title
 
@@ -49,6 +49,8 @@ class analysis_task(task):
 
         # email to researcher
         self.emails = {}
+        # QNAP Security Advisory
+        self.qsa = {}
 
     def get_sf_case_num(self):
         print('Get SF Case Number')
@@ -441,21 +443,21 @@ class analysis_task(task):
         for cve_json_file in cve_json_files:
             # modify cve json
             path_add_cveid, json_ext = os.path.splitext(cve_json_file)
-            output_file = path_add_cveid + ".x.json"
-            version_data = [    {   "platform": "platform 1",
-                                    "version_affected": "<",
-                                    "version_value": "1.0"
-                                },
-                                {   "platform": "platform 2",
-                                    "version_affected": "<",
-                                    "version_value": "2.0"
-                                },
 
-            ]
             cveid = extract_cveid(path_add_cveid)
+            self.qsa[cveid] = {}
+            self.qsa[cveid]['title'] = cveid_2_summary[cveid]
+            comments = self.issue.fields.comment.comments
+            for comment in comments:
+                comment_parser(self, comment, ['['+cveid+']', ['[SAID]:', '[FIX]:', '[CREDIT]:']], qsa_callback)
+            description, solution = make_description(cve_json_file, self.qsa[cveid]['product_name'], self.qsa[cveid]['version_data'])
+            self.qsa[cveid]['description'] = description
+            self.qsa[cveid]['solution'] = solution
+
+            output_file = path_add_cveid + ".x.json"
             if cveid in cveid_2_summary:
                 cve_json_complete(cve_json_file, output_file, 
-                                  cveid_2_summary[cveid], 'product name', version_data,
-                                  'description', 'url',
-                                  'solution', 'credit', 'qsa_id')
-                # self.jira.add_attachment(issue=self.issue, attachment=output_file)
+                                  self.qsa[cveid]['title'], self.qsa[cveid]['product_name'], self.qsa[cveid]['version_data'],
+                                  self.qsa[cveid]['description'], self.qsa[cveid]['url'],
+                                  self.qsa[cveid]['solution'], self.qsa[cveid]['credit'], self.qsa[cveid]['qsa_id'])
+                self.jira.add_attachment(issue=self.issue, attachment=output_file)

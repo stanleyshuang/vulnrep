@@ -18,6 +18,28 @@ def is_cve_x_json_filename(filename):
     is_cve_x = re.match(cve_x_pattern, filename)
     return is_cve_x
 
+def make_description(cve_json_file, product_name, version_data):
+    from pkg.util.util_text_file import open_json
+    from pkg.qjira.description import extract_cweid
+
+    cve_data = open_json(cve_json_file)
+    cwe_description = cve_data["problemtype"]["problemtype_data"][0]["description"][0]["value"]
+    cweid = extract_cweid(cwe_description)
+
+    cweid2description = {
+        'CWE-798': 'Insecure storage of sensitive information has been reported to affect QNAP NAS running {product_name}. ' \
+        'If exploited, this vulnerability allows remote attackers to read sensitive information by accessing the unrestricted storage mechanism.\n',
+    }
+
+    solution_head = 'QNAP have already fixed this vulnerability in the following versions of {product_name}:\n'
+
+    solution = solution_head.format(product_name=product_name)
+    for pf_pt_ver in version_data:
+        solution += '{platform}: {product_name} {version} and later\n'.format(platform=pf_pt_ver['platform'],
+                                                                            product_name=product_name,
+                                                                            version=pf_pt_ver['version_value'])
+    return cweid2description[cweid].format(product_name=product_name)+solution, solution
+
 def cve_json_complete(input_file, output_file, 
                       title, product_name, version_data,
                       description, url,
