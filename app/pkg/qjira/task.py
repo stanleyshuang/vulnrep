@@ -12,7 +12,7 @@ from . import i_issue, get_issuetype
 from .comment import comment_parser, analysis_done_callback
 from .cve_json import is_cve_json_filename, is_cve_x_json_filename, cve_json_complete
 from .description import parse_salesforce_link, severity_level_2_cvssv3_score
-from .description import extract_severity_level, extract_cveid
+from .description import extract_severity_level, extract_cveid, extract_sa_title
 
 class task(i_issue):
     '''
@@ -436,7 +436,7 @@ class analysis_task(task):
         for item in summary:
             extracted_cveid = extract_cveid(item)
             if extracted_cveid:
-                cveid_2_summary[extracted_cveid] = item
+                cveid_2_summary[extracted_cveid] = extract_sa_title(item)
 
         for cve_json_file in cve_json_files:
             # modify cve json

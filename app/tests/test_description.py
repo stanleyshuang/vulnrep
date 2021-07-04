@@ -62,7 +62,7 @@ class ExtractSaTitleTestCase(unittest.TestCase):
         self.assertTrue('ADB Backup allowed'==extract_sa_title('[KoiTalk][Android][Security]INTSI000-1005 ADB Backup allowed'))
         
     def test_extract_sa_title_80(self):
-        self.assertTrue('TabNabbing issue | Tab nabbing via window.opener -> https://software.qnap.com'==extract_sa_title('[INTSI000-1026][Web][Security][Low][V2] TabNabbing issue | Tab nabbing via window.opener -> https://software.qnap.com  (Mark Ella)'))
+        self.assertTrue('Exposure of Sensitive Information in CloudLink'==extract_sa_title('\u00a0INTSI000-732[QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink -\u00a0CVE-2021-28815 (xxyantixx)'))
         
     def test_extract_sa_title_90(self):
         self.assertTrue('Use of Hard-coded Credentials'==extract_sa_title('[QSS][Security][High][V4] Use of Hard-coded Credentials - CVE-2021-28813 (Sergey)'))

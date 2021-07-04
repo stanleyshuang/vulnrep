@@ -72,7 +72,7 @@ def extract_sa_title(content):
             satitle = m1.group(1)
             # print(satitle)
 
-    satitle = satitle.strip(' -')
+    satitle = satitle.strip(' -\u00a0')
     # print(satitle)
     return satitle
 
