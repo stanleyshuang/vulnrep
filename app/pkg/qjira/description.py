@@ -28,23 +28,53 @@ def parse_salesforce_link(content):
     b_need_update, name, link, others = extract_str_in_link(content)
     return b_need_update, name, link, others
 
-def parse_severity_leve_in_summary(content):
+def extract_severity_level(content):
     '''
-    example: [INTSI000-1025][Web][Security][Medium][V3] User Account hacking -> https://license2.qnap.com (Mark Ella)
+    example:    [INTSI000-1025][Web][Security][Medium][V3] User Account hacking -> https://license2.qnap.com (Mark Ella)
+    return:     [V3]
     '''
     m = re.search(r"([\[][V][1-5][\]])", content)
     if m:
         return m.group(0)
     return None
 
-def parse_cveid_in_summary(content):
+def extract_cveid(content):
     '''
-    example: [INTSI000-1025][Web][Security][Medium][V3] User Account hacking -> https://license2.qnap.com (Mark Ella)
+    example:    [QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink - CVE-2021-28815 (xxyantixx)
+    return:     CVE-2021-28815
     '''
     m = re.search(r"(CVE-\d{4}-\d{4,7})", content)
     if m:
         return m.group(0)
     return None
+
+def extract_sa_title(content):
+    '''
+    example:     INTSI000-732[QPKG][Security][Medium][V3] Exposure of Sensitive Information in CloudLink - CVE-2021-28815 (xxyantixx)
+    return:     Exposure of Sensitive Information in CloudLink
+    '''
+    satitle = content
+    # print('')
+    # print(satitle)
+    ### (researcher_name)
+    reg_tails = [r"\(.*\)", r"CVE-\d{4}-\d{4,7}"]
+    for reg_tail in reg_tails:
+        m2 = re.search(reg_tail, satitle)
+        if m2:
+            idx_tail = satitle.find(m2.group(0))
+            satitle = satitle[0:idx_tail]
+            # print(satitle)
+
+    reg_heads = [r"\[V[12345]\](.*)", r"\[Security\](.*)", r"INTSI\d{3}-\d{4}(.*)"]
+    for reg_head in reg_heads:
+        m1 = re.search(reg_head, satitle)
+        if m1:
+            satitle = m1.group(1)
+            # print(satitle)
+
+    satitle = satitle.strip(' -')
+    # print(satitle)
+    return satitle
 
 def severity_level_2_cvssv3_score(severity_level):
     severity2cvss = { '[V1]': ['0.0', '1.9'],

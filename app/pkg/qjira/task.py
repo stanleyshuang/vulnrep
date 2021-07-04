@@ -11,7 +11,8 @@ from pkg.util.util_datetime import pick_n_days_after, utc_to_local_str
 from . import i_issue, get_issuetype
 from .comment import comment_parser, analysis_done_callback
 from .cve_json import is_cve_json_filename, is_cve_x_json_filename, cve_json_complete
-from .description import parse_salesforce_link, parse_severity_leve_in_summary, severity_level_2_cvssv3_score
+from .description import parse_salesforce_link, severity_level_2_cvssv3_score
+from .description import extract_severity_level, extract_cveid
 
 class task(i_issue):
     '''
@@ -413,7 +414,7 @@ class analysis_task(task):
             vuln_analysis_statement = ''
     
             for item in summary:
-                severity_level = parse_severity_leve_in_summary(item)
+                severity_level = extract_severity_level(item)
                 low, high = severity_level_2_cvssv3_score(severity_level)
                 vuln_analysis_statement += '- {case_num} {subject}\n' \
                                            'Valid, the severity level is {severity_level} ' \
@@ -424,15 +425,23 @@ class analysis_task(task):
                                                 low=low,
                                                 high=high)
             rating['body'] = mail_template.format(researcher_name=self.sf_data['researcher_name'],
-                                                      vuln_analysis_statement=vuln_analysis_statement)
+                                                  vuln_analysis_statement=vuln_analysis_statement)
             if len(summary)>0:
                 self.emails['rating'] = rating
 
     def prepare_cve_jsons(self, cve_json_files):
+        ### cveid_2_summary
+        cveid_2_summary = {}
+        summary = self.analysis_data['summary']
+        for item in summary:
+            extracted_cveid = extract_cveid(item)
+            if extracted_cveid:
+                cveid_2_summary[extracted_cveid] = item
+
         for cve_json_file in cve_json_files:
             # modify cve json
-            cveid, json_ext = os.path.splitext(cve_json_file)
-            output_file = cveid + ".x.json"
+            path_add_cveid, json_ext = os.path.splitext(cve_json_file)
+            output_file = path_add_cveid + ".x.json"
             version_data = [    {   "platform": "platform 1",
                                     "version_affected": "<",
                                     "version_value": "1.0"
@@ -443,8 +452,10 @@ class analysis_task(task):
                                 },
 
             ]
-            cve_json_complete(cve_json_file, output_file, 
-                              'the title', 'product name', version_data,
-                              'description', 'url',
-                              'solution', 'credit', 'qsa_id')
-            # self.jira.add_attachment(issue=self.issue, attachment=output_file)
+            cveid = extract_cveid(path_add_cveid)
+            if cveid in cveid_2_summary:
+                cve_json_complete(cve_json_file, output_file, 
+                                  cveid_2_summary[cveid], 'product name', version_data,
+                                  'description', 'url',
+                                  'solution', 'credit', 'qsa_id')
+                # self.jira.add_attachment(issue=self.issue, attachment=output_file)
