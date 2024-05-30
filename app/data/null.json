@@ -1,0 +1,83 @@
+{
+    "containers": {
+        "cna": {
+            "affected": [
+                {
+                    "versions": [
+                        {}
+                    ]
+                }
+            ],
+            "descriptions": [
+                {
+                    "lang": "en",
+                    "supportingMedia": [
+                        {
+                            "base64": false,
+                            "type": "text/html",
+                            "value": ""
+                        }
+                    ],
+                    "value": ""
+                }
+            ],
+            "impacts": [
+                {
+                    "capecId": "",
+                    "descriptions": [
+                        {
+                            "lang": "en",
+                            "value": ""
+                        }
+                    ]
+                }
+            ],
+            "metrics": [
+                {
+                }
+            ],
+            "problemTypes": [
+                {
+                    "descriptions": [
+                        {
+                            "lang": "en"
+                        }
+                    ]
+                }
+            ],
+            "providerMetadata": {
+                "orgId": "2fd009eb-170a-4625-932b-17a53af1051f"
+            },
+            "references": [
+                {
+                }
+            ],
+            "solutions": [
+                {
+                    "lang": "en",
+                    "supportingMedia": [
+                        {
+                            "base64": false,
+                            "type": "text/html",
+                            "value": ""
+                        }
+                    ],
+                    "value": ""
+                }
+            ],
+            "source": {
+                "discovery": "UNKNOWN"
+            },
+            "x_generator": {
+                "engine": "Vulnogram 0.1.0-dev"
+            }
+        }
+    },
+    "cveMetadata": {
+        "assignerOrgId": "2fd009eb-170a-4625-932b-17a53af1051f",
+        "serial": 1,
+        "state": "PUBLISHED"
+    },
+    "dataType": "CVE_RECORD",
+    "dataVersion": "5.0"
+}
