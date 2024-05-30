@@ -146,6 +146,8 @@ def extract_model(content):
             return "quwan", token, wuwanwebsite_version_begin(token)
         elif token.lower().find("qmiro") >= 0:  # QuWAN
             return "qmiro", token, qumiro_version_begin(token)
+        elif token.lower().find("solink") >= 0:  # Solink
+            return "solink", token, qts_version_begin(token)
         elif token.lower() == "main":  # Main
             return "main", token, "x"
         elif token.lower() == "misc":  # Misc.

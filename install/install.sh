@@ -6,6 +6,7 @@ cd $work_path
 base_dir=$(pwd)
 repo="$base_dir/.."
 env="$base_dir/_build/$1"
+py_lib_local="/Users/$USER/github/stanleyshuang/py_lib"
 
 ### 0. Check arguments
 # the configuration
@@ -45,12 +46,12 @@ if [[ ! -d $apphome ]]; then
 fi
 
 # copy py_lib into the project
-if [ -d "/Users/$USER/gitlab/stanleyshuang/py_lib" ]; then
-echo "cp -a  /Users/$USER/gitlab/stanleyshuang/py_lib/pkg/.  $src/pkg/"
-      cp -a "/Users/$USER/gitlab/stanleyshuang/py_lib/pkg/." $src/pkg/
+if [ -d "$py_lib_local" ]; then
+echo "cp -a  $py_lib_local/pkg/.  $src/pkg/"
+      cp -a "$py_lib_local/pkg/." $src/pkg/
 
-echo "cp -a  /Users/$USER/gitlab/stanleyshuang/py_lib/tests/.  $src/tests/"
-      cp -a "/Users/$USER/gitlab/stanleyshuang/py_lib/tests/." $src/tests/
+echo "cp -a  $py_lib_local/tests/.  $src/tests/"
+      cp -a "$py_lib_local/tests/." $src/tests/
 fi
 
 # update latest source code
