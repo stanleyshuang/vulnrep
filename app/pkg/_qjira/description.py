@@ -1605,6 +1605,60 @@ def parse_store_publish_process(
                 version = m.group(1) + "." + m.group(2) + "." + m.group(3) + buildnum
                 version_begin = m.group(1) + "." + m.group(2) + ".x"
                 return product, platform, version, version_begin
+    elif key and "QTSCAYIN" in key:
+        m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{1,2})", ver_n_bld)
+        if model == "Music Station" and m and m.group(1) and m.group(2) and m.group(3):
+            product = "Music Station"
+            platform = ""
+            version = m.group(1) + "." + m.group(2) + "." + m.group(3)
+            version_begin = m.group(1) + "." + m.group(2) + ".x"
+            return product, platform, version, version_begin
+        else:
+            product = model
+            version = ver_n_bld
+            if filelink:
+                m = re.search(
+                    r"VideoStationPro_(\d{1,2}).(\d{1,2}).(\d{1,2})_(\d{4})(\d{2})(\d{2})",
+                    filelink,
+                )
+                if (
+                    m
+                    and m.group(1)
+                    and m.group(2)
+                    and m.group(3)
+                    and m.group(4) + m.group(5) + "." + m.group(6)
+                ):
+                    version = (
+                        m.group(1)
+                        + "."
+                        + m.group(2)
+                        + "."
+                        + m.group(3)
+                        + " ( "
+                        + m.group(4)
+                        + "/"
+                        + m.group(5)
+                        + "/"
+                        + m.group(6)
+                        + " )"
+                    )
+                    version_begin = m.group(1) + "." + m.group(2) + ".x"
+                    return product, "", version, version_begin
+            else:
+                buildnum = ""
+                m = re.search(r"(\d{4})(\d{2})(\d{2})", ver_n_bld)
+                if m and m.group(1) and m.group(2) and m.group(3):
+                    buildnum = (
+                        " ( " + m.group(1) + "/" + m.group(2) + "/" + m.group(3) + " )"
+                    )
+
+                m = re.search(r"VideoStation v(\d{1,2})\.(\d{1,2})\.(\d{1,2})", summary)
+                if m and m.group(1) and m.group(2) and m.group(3):
+                    product = model
+                    platform = ""
+                    version = m.group(1) + "." + m.group(2) + "." + m.group(3) + buildnum
+                    version_begin = m.group(1) + "." + m.group(2) + ".x"
+                    return product, platform, version, version_begin
     elif key and "QTSDLST0" in key:
         product = model
         version = ver_n_bld

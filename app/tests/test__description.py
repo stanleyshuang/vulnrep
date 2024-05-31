@@ -1507,6 +1507,22 @@ class ParseStorePublishProcessQtsBuildTestCase(unittest.TestCase):
             and "5.5.x" == ver_begin
         )
 
+    def test_parse_store_publish_process_262(self):
+        product, platform, version, ver_begin = parse_store_publish_process(
+            "QTSCAYIN-1408",
+            "Video Station",
+            None,
+            "5.8.1",
+            filelink='\\\\172.17.25.251\\Daily_Build\\3rd-Party_QPKGs\VideoStationPro\\5.8.1\\\nVideoStationPro_5.8.1_20240226.qpkg',
+            summary=None,
+        )
+        self.assertTrue(
+            "Video Station" == product
+            and "" == platform
+            and "5.8.1 ( 2024/02/26 )" == version
+            and "5.8.x" == ver_begin
+        )
+
     def test_parse_store_publish_process_270(self):
         product, platform, version, ver_begin = parse_store_publish_process(
             "QTSDLST0-355",
@@ -1733,6 +1749,21 @@ class ParseStorePublishProcessQtsBuildTestCase(unittest.TestCase):
             and "" == platform
             and "4.8.11" == version
             and "4.8.x" == ver_begin
+        )
+
+    def test_parse_store_publish_process_392(self):
+        product, platform, version, ver_begin = parse_store_publish_process(
+            "QTSCAYIN-1407",
+            "Music Station",
+            None,
+            "5.4.0",
+            filelink="\\\\172.17.25.251\\Daily_Build\\3rd-Party_QPKGs\\MusicStation\\5.4.0\\\nMusicStation_5.4.0.qpkg",
+        )
+        self.assertTrue(
+            "Music Station" == product
+            and "" == platform
+            and "5.4.0" == version
+            and "5.4.x" == ver_begin
         )
 
     def test_parse_store_publish_process_400(self):
