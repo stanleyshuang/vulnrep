@@ -138,6 +138,7 @@ g_gni = {
     "Malaysia": 10120,  # 28730 in 2021
     "Brazil": 11175,
     "Poland": 14510,
+    "Latvia": 16880,
     "World": 18627,  # in 2021
     "Taiwan": 25360,
     "Spain": 29450,
