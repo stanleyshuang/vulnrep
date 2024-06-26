@@ -261,8 +261,8 @@ class analysis_task(task):
         return None
 
     def set_status(self, data, downloads):
-        ### determine resolution time, V3 90 days, V4/V5 60 days
-        resolution_days = 60
+        ### determine resolution time, V3 90 days, V4/V5 30 days
+        resolution_days = 90
         severity_level = 0
         if self.analysis and self.analysis.is_analysis_done():
             severity_level = self.analysis.get_severity_level()
@@ -323,7 +323,7 @@ class analysis_task(task):
             if deadline > original_deadline or (
                 deadline != original_deadline
                 and severity_level
-                and content_filter(severity_level, ["[V5]"], b_op_and=False)
+                and content_filter(severity_level, ["[V4]", "[V5]"], b_op_and=False)
             ):
                 self.debuglog_r(
                     "--- Original Deadline                    " + original_deadline_str
