@@ -642,6 +642,7 @@ class analysis_task(task):
         self.dependent_counts = 0
         self.dependent_issues = []
 
+        b_90day = self.does_label_exist("90day")
         if self.is_main_task():
             self.search_blocked()
             for blocked_issue in self.blocked_issues:
@@ -657,6 +658,9 @@ class analysis_task(task):
                         self.sf_data["researcher_name"],
                         self.sf_data,
                     )
+                    ### 90-day policy labels
+                    if b_90day and not blocked_task.does_label_exist("90day"):
+                        blocked_task.update_labels("90day")
         else:
             self.search_blocked()
             self.search_blocking()
@@ -665,11 +669,17 @@ class analysis_task(task):
                     the_bug = vuln_bug(self.jira, blocked_issue, self.debug_obj)
                     self.dependent_counts += 1
                     self.dependent_issues.append(the_bug)
+                    ### 90-day policy labels
+                    if b_90day and not the_bug.does_label_exist("90day"):
+                        the_bug.update_labels("90day")
+
             for blocking_issue in self.blocking_issues:
                 if get_issuetype(blocking_issue) == "Bug":
                     the_bug = vuln_bug(self.jira, blocking_issue, self.debug_obj)
                     self.dependent_counts += 1
                     self.dependent_issues.append(the_bug)
+                    if b_90day and not the_bug.does_label_exist("90day"):
+                        the_bug.update_labels("90day")
 
     def set_closed_date(self, data, downloads):
         # the_task_closed_date

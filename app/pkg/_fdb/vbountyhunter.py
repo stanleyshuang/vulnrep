@@ -16,15 +16,16 @@ class vbountyhunter(permanent_obj):
             ],
             "bountyhunter2": [
                 "Bangladesh ",
-                "Sajibe Kanti",
-                "Pren Soft",
+                "Sajibe Kxxti",
+                "Sajibe Kxxti Sarkar",
+                "Pren Xxxx",
                 "Dhaka , Bangladesh",
-                "Sajibe Kanti Sarkar",
-                "https://www.linkedin.com/in/sajibe-kanti/",
-                "Sajibekanti.cse@gmail.com",
-                "+8801713607998",
-                "Name : Sajibe Kanti \nAddress : 3R Villa , House : 1 , Road : 1 , Katasur , Mohammadpur , 1207 ,Dhaka \nCity : Dhaka \nZIP : 1207 \nCounty : Bangladesh \nMobile : +8801713607998",
-                "BANK NAME: Bank Asia Limited\nA/C No: 60834003718\nA/C N : SAJIBE KANTI SARKAR \nBRANCH: Maijdee Court , Noakhali \nMOBILE: 01832103220\nSWIFT Code: BALBBDDH\nRouting Number: 070750214\n--\nName: Sajibe Kanti Sarkar\nRouting number: 084009519\nAccount number: 9600 0000 0056 2268\nAccount type: Checking\nAddress: TransferWise\n19 W 24th Street\nNew York NY 10010\nUnited States",
+                "https://www.linkedin.com/in/xxxx/",
+                "Sajibekanti.xxx@xxxx.com",
+                "bank..",
+                "+8801713600000",
+                "Name : Sajibe Kxxti \nAddress : XXXX , House : 1 , Road : 1 , Katasur , Mohammadpur , 1207 ,Dhaka \nCity : Dhaka \nZIP : 1207 \nCounty : Bangladesh \nMobile : +8801713600000",
+                "BANK NAME: Bank Asia Limited\nA/C No: 60834000000\nA/C N : SAJIBE XXX SARKAR \nBRANCH: Maijdee Court , Noakhali \nMOBILE: 01832100000\nSWIFT Code: BALBBDDH\nRouting Number: 070750000\n--\nName: Sajibe Kxxti Sarkar\nRouting number: 084009519\nAccount number: 9600 0000 0056 0000\nAccount type: Checking\nAddress: TransferWise\n19 W 24th Street\nNew York NY 10010\nUnited States",
                 "No",
                 "bounty_hunter"
             ]
@@ -91,6 +92,7 @@ class vbountyhunter(permanent_obj):
             BOUNTYHUNTER_NAME_IDX = 4
             BOUNTYHUNTER_PAYPAL_IDX = 9
             BOUNTYHUNTER_BANK_IDX = 10
+            BOUNTYHUNTER_90_DAY_POLICY = 14
             if len(whole[email]['bountyhunter2'])>0:
                 profile['country'] = whole[email]['bountyhunter2'][0]
             if len(whole[email]['bountyhunter2'])>BOUNTYHUNTER_NAME_IDX-BOUNTYHUNTER_COUNTRY_IDX:
@@ -99,6 +101,8 @@ class vbountyhunter(permanent_obj):
                 profile['paypal'] = whole[email]['bountyhunter2'][BOUNTYHUNTER_PAYPAL_IDX-BOUNTYHUNTER_COUNTRY_IDX]
             if len(whole[email]['bountyhunter2'])>BOUNTYHUNTER_BANK_IDX-BOUNTYHUNTER_COUNTRY_IDX:
                 profile['bank'] = whole[email]['bountyhunter2'][BOUNTYHUNTER_BANK_IDX-BOUNTYHUNTER_COUNTRY_IDX]
+            if len(whole[email]['bountyhunter2'])>BOUNTYHUNTER_90_DAY_POLICY-BOUNTYHUNTER_COUNTRY_IDX:
+                profile['90day'] = whole[email]['bountyhunter2'][BOUNTYHUNTER_90_DAY_POLICY-BOUNTYHUNTER_COUNTRY_IDX]
         return profile
 
     def request_researcher_name(self, email, researcher_nickname):
@@ -129,27 +133,5 @@ class vbountyhunter(permanent_obj):
                 b_plan_2_disclose = False
         return b_plan_2_disclose, b_request_info, researcher_name
 
-    '''
-    def is_bounty_hunter(self, email):
-        ### read bounty hunter profile
-        self.load('global')
-        whole = self.get()
-
-        BOUNTYHUNTER_COUNTRY_IDX = 3
-        BOUNTYHUNTER_ATTRIBUTE_IDX = 14
-
-        if whole and email in whole and 'bountyhunter2' in whole[email]:
-            if len(whole[email]['bountyhunter2'])>BOUNTYHUNTER_ATTRIBUTE_IDX-BOUNTYHUNTER_COUNTRY_IDX:
-                if whole[email]['bountyhunter2'][BOUNTYHUNTER_ATTRIBUTE_IDX-BOUNTYHUNTER_COUNTRY_IDX]=='bounty_hunter':
-                    return True
-                else:
-                    # the researcher is not a bounty hunter
-                    return False
-            else:
-                # the researcher is not determined yet
-                return False
-        # not in the name list
-        return False
-    '''
 
     

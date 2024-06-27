@@ -113,6 +113,13 @@ def jira_task_routine(
             salesforce_orgid, salesforce_username, salesforce_password, sf_case_num
         )
         the_issue.set_sf_data(created_date, email, name, sf_data)
+        ### 90-day policy labels
+        bountyhunter_profile = vbountyhunter.retrieve_profile(email)
+        if '90day' in bountyhunter_profile:
+            print('研究員' + email + ' 90天政策：' + bountyhunter_profile['90day'])
+            if bountyhunter_profile['90day'] == 'Yes' and not the_issue.does_label_exist("90day"):
+                the_issue.update_labels("90day")
+
     if assignee:
         the_issue.set_assignee(assignee)
     try:
