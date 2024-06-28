@@ -74,7 +74,8 @@ class raw(permanent_obj):
             for product in products:
                 if len(sa_title)>0:
                     sa_title += ', '
-                sa_title += product
+                if product:
+                    sa_title += product
         elif 'summary' in self.json_obj['raw']:
             sa_title = extract_sa_title(self.json_obj['raw']['summary'])
 
