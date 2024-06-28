@@ -92,7 +92,7 @@ def make_gsheet(
     else:
         cve_json_url = ""
     if qsaid and len(qsaid) > 0:
-        sqa_url = "https://www.qnap.com/en/security-advisory/" + qsaid.lower()
+        sqa_url = "https://www.qnap.com/en/security-advisory/" + qsaid.lower() + '?preview=' + jira_key
     else:
         sqa_url = ""
     jira_url = "https://qnap-jira.qnap.com.tw/browse/" + jira_key
