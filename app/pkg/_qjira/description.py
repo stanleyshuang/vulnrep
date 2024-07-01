@@ -1981,6 +1981,17 @@ def parse_store_publish_process(
             version = m.group(1) + "." + m.group(2)
             version_begin = m.group(1) + ".x"
             return product, "", version, version_begin
+    elif key and "HEL" in key:
+        m = re.search(
+            r"helpdesk_(\d{1,2}\.\d{1,2})\.(\d{1,2})-\d{4}\d{2}\d{2}_master.qpkg",
+            filelink,
+        )
+        if m and m.group(1) and m.group(2):
+            product = model
+            platform = ""
+            version = m.group(1) + "." + m.group(2)
+            version_begin = m.group(1) + ".x"
+            return product, "", version, version_begin
 
     print("---     Store Publish Process - project {key} not found".format(key=key))
     print("        model = {model}".format(model=str(model)))

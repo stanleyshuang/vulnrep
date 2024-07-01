@@ -250,6 +250,8 @@ class cve:
             "Proxy Server": "QPKG",
             "myQNAPcloud Link": "QPKG",
             "Notes Station 3": "QPKG",
+            "Helpdesk": "QPKG",
+            "QuLog Center": "QPKG",
         }
         qsa_recommendations = {
             "QTS": (
@@ -1018,6 +1020,10 @@ class cve:
             },
             "CWE-306": {
                 "description": "A missing authentication for critical function vulnerability has been reported to affect {affected}. If exploited, the vulnerability could allow {remote_authenticated} to gain access to and execute certain functions via {str_vectors}.",
+                "mitigation": "",
+            },
+            "CWE-307": {
+                "description": "An improper restriction of excessive authentication attempts vulnerability has been reported to affect {affected}. If exploited, the vulnerability could allow {remote_authenticated} to perform an arbitrary number of authentication attempts via {str_vectors}.",
                 "mitigation": "",
             },
             "CWE-319": {

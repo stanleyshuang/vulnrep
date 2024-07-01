@@ -1841,3 +1841,18 @@ class ParseStorePublishProcessQtsBuildTestCase(unittest.TestCase):
             and "3.9.x" == ver_begin
         )
 
+    def test_parse_store_publish_process_450(self):
+        product, platform, version, ver_begin = parse_store_publish_process(
+            "HEL-1251",
+            "Helpdesk",
+            "需上架至 QVP 2.0.0-2.2.0, QVP 2.3.0",
+            "3.3.1",
+            filelink="//172.17.25.251/Daily_Build/helpdesk/build/master/\nhelpdesk_3.3.1-20240516_master.qpkg\n",
+        )
+        self.assertTrue(
+            "Helpdesk" == product
+            and "" == platform
+            and "3.3.1" == version
+            and "3.3.x" == ver_begin
+        )
+
