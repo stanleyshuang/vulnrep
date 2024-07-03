@@ -43,7 +43,8 @@ def make_gsheet(
     deadline_str = the_issue.issue.raw["fields"]["customfield_16401"]
     print("--- cveid: " + cveid)
     print("--- qsaid: " + qsaid)
-    print("--- deadline_str: " + deadline_str)
+    if deadline_str:
+        print("--- deadline_str: " + deadline_str)
 
     if "sf_created" in vraw.json_obj["raw"] and vraw.json_obj["raw"]["sf_created"]:
         submitted_date = vraw.json_obj["raw"]["sf_created"]
