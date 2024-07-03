@@ -148,7 +148,7 @@ g_gni = {
     "Israel": 40850,
     "UAE": 41010,
     "France": 41070,
-    "United Kingdom": 41330,
+    "UK": 41330,
     "Germany": 47450,
     "Iceland": 49866,
     "Austria": 55960,
