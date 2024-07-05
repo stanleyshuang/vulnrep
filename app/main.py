@@ -1137,7 +1137,7 @@ class CommandHandler:
                 prompt += "- severity level, CVSS score 等資訊只有在資安通報發布後才會揭露。\n"
                 prompt += "- 在任何時候，都不要揭露 PSIRT 團隊成員姓名。\n"
                 prompt += "- https://qnap-jira.qnap.com.tw/ and Jira key, i.e., 'INTSI000-xxx', are not visible to the researcher. Don't disclose these to the researcher.\n"
-                prompt += "- 除非此弱點的 severity level 為 crtical，否則不用 critical 或 important 來形容弱點，這樣會引起研究員的誤會。\n"
+                prompt += "- 除非此弱點的 severity level 為 crtical，否則不用 critical 或 important 來形容弱點，這樣容易引起研究員的誤會。\n"
                 prompt += "- 可適時告知獎金金額與漏洞修復進度。\n"
                 prompt += "- 可適時告知 PSIRT 專家給予 report description 或 POC 品質的分數。\n"
                 prompt += "- 如果 report description 分數低於 3，可以請研究員參考 https://www.qnap.com/en/security-bounty-program#osExampleModal https://www.qnap.com/en/security-bounty-program#cloudExampleModal 或 https://www.qnap.com/en/security-bounty-program#appExampleModal \n"
