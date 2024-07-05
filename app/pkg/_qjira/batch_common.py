@@ -213,9 +213,10 @@ def earse_analysis(
     files = ["analysis.json", "validation_email.json", "qsa.json"]
     for file in files:
         filepath = apphome_downloads + "/jira/" + task_key + "/" + file
-        if os.path.isfile(filepath):
+        if os.path.isfile(filepath) or file.startswith("CVE-"):
             print("    REMOVE: " + filepath)
             os.remove(filepath)
+        
     # 刪除公告
     comments = the_issue.issue.fields.comment.comments
     for comment in comments:
