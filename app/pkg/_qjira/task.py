@@ -374,7 +374,7 @@ class analysis_task(task):
                             assignee=assignee
                         ),
                     )
-                elif model == "amiz cloud":
+                elif model == "amiz":
                     assignee = "HarryChen@qnap.com"
                     analysis_task.add_watchers(
                         self.jira, self.issue, ["AnryLu@qnap.com"]
