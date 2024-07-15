@@ -171,7 +171,7 @@ def sf_get_attachments(
 
     for record in attachments["records"]:
         attachment_id = record["Id"]
-        attachment_name = record["Name"]
+        attachment_name = record["Id"] + '-' + record["Name"]
         attachment_type = record["ContentType"]
 
         # Fetch the attachment content
