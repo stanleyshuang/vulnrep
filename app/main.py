@@ -46,7 +46,18 @@ def get_mantis_ticket(mantis_url, username, password, project, mantis_id, downlo
     return mantis(mantis_url, username, password, project, mantis_id, downloads)
 
 
-def jira_subtask(the_issue, b_update, group_name="n/a"):
+def jira_subtask(jira, the_issue, b_update, group_name="n/a"):
+    matrixcup = [
+        {"name": "QTS研發處/軟體研發一部 61110", "manager": "WadeLiu@qnap.com"},
+        {"name": "QTS研發處/軟體研發二部 61120", "manager": "AquavitWu@qnap.com"},
+        {"name": "視訊產品研發處/軟體研發六部 61760", "manager": "WCLin@qnap.com"},
+        {"name": "視訊產品研發處/軟體研發三部 61730", "manager": "JustinTseng@qnap.com"},
+        {"name": "視訊產品研發處/軟體研發一部 61710", "manager": "BruceLan@qnap.com"},
+        {"name": "先進網路產品研發處/軟體研發四部 65240", "manager": "GaryHuang@qnap.com"},
+        {"name": "視訊產品研發處/軟體研發七部 61770", "manager": "ArcherChang@qnap.com"},
+        {"name": "系統產品研發處/系統研發一部 63130", "manager": "KevinKo@qnap.com"},
+        {"name": "雲端與邊際運算研發處/軟體研發一部 61510", "manager": "AnryLu@qnap.com"},
+    ]
     divisions = [
         {"name": "系統核心研發處 33100", "manager": "CHYang@qnap.com"},
         {"name": "QTS研發處 61100", "manager": "KenChen@qnap.com"},
@@ -170,6 +181,7 @@ def jira_subtask(the_issue, b_update, group_name="n/a"):
         "qpkgs": qpkgs,
         "storage": storage,
         "special": special,
+        "matrixcup": matrixcup,
     }
 
     if group_name not in groups:
@@ -576,6 +588,17 @@ class CommandHandler:
             else:
                 self.mantis_id = int(input_data.replace("#", ""))
                 self.the_watcher = None
+        elif arg.find("subtask:") >= 0:
+            # cmd:subtask #########
+            self.cmd = "subtask"
+            input_data = arg[len("subtask:") :]
+            if input_data.find(":") >= 0:
+                inputs = input_data.split(":")
+                self.jira_key = inputs[0]
+                self.group_name = inputs[1]
+            else:
+                self.mantis_id = int(input_data)
+                self.group_name = None
         elif arg.find("sf.") >= 0:
             # cmd:sf #############
             self.cmd = "sf"
@@ -691,6 +714,8 @@ class CommandHandler:
             self.handle_researcher_command()
         elif self.cmd == "mantis":
             self.handle_mantis_command()
+        elif self.cmd == "subtask":
+            self.handle_subtask_command()
         elif (
             self.cmd == "sf"
             and self.product_cat
@@ -1609,6 +1634,20 @@ class CommandHandler:
             debugobj=self.debugobj,
             researcher_email=self.researcher_email,
         )
+
+    def handle_subtask_command(self):
+        if self.jira_key is None or len(self.jira_key) == 0:
+            return
+        jira, issue = get_jira_issue(
+            self.jira_url, self.jira_username, self.jira_password, self.jira_key
+        )
+        if get_issuetype(issue) == "Task":
+            the_issue = analysis_task(jira, issue, self.debugobj)
+            b_update = self.option == "update"
+            if self.group_name:
+                jira_subtask(jira, issue, b_update, group_name=self.group_name)
+            else:
+                jira_subtask(jira, issue, b_update)
 
     def handle_mantis_command(self):
         if self.mantis_id is None or self.mantis_id < 0:
