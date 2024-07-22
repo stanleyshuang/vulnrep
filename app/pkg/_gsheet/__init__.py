@@ -126,10 +126,11 @@ class i_gsheet():
     def single_col_match(value, cell_list):
         # print('>>> find {value}'.format(value=value))
         rows = []
-        for i in range(len(cell_list)):
-            # print('>>> {value}: {row}'.format(value=cell_list[i], row=i))
-            if cell_list[i]==value:
-                rows.append(i)
+        if cell_list:
+            for i in range(len(cell_list)):
+                # print('>>> {value}: {row}'.format(value=cell_list[i], row=i))
+                if cell_list[i]==value:
+                    rows.append(i)
         # print('>>> return ' + str(rows))
         return rows
 
