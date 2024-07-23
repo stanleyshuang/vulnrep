@@ -1175,9 +1175,11 @@ class CommandHandler:
                     ### Update label 'responsed'
                     if not the_issue.does_label_exist("responsed"):
                         the_issue.update_labels("responsed")
+                '''
                 if gpt_return:
                     self.subcmd = "gpt_summary"
                     self.handle_jiramsg_command()
+                '''
 
         elif self.subcmd == "more_info":
             jira, issue = get_jira_issue(
