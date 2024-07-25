@@ -253,6 +253,7 @@ class cve:
             "Notes Station 3": "QPKG",
             "Helpdesk": "QPKG",
             "QuLog Center": "QPKG",
+            "Download Station": "QPKG",
         }
         qsa_recommendations = {
             "QTS": (
