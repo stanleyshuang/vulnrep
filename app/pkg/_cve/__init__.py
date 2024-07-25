@@ -1019,6 +1019,10 @@ class cve:
                 "description": "An improper authentication vulnerability has been reported to affect {affected}. If exploited, the vulnerability could allow {remote_authenticated} to compromise the security of the system via {str_vectors}.",
                 "mitigation": "",
             },
+            "CWE-295": {
+                "description": "An improper certificate validation vulnerability has been reported to affect {affected}. If exploited, the vulnerability could allow {remote_authenticated} to compromise the security of the system via {str_vectors}.",
+                "mitigation": "",
+            },
             "CWE-306": {
                 "description": "A missing authentication for critical function vulnerability has been reported to affect {affected}. If exploited, the vulnerability could allow {remote_authenticated} to gain access to and execute certain functions via {str_vectors}.",
                 "mitigation": "",
