@@ -175,7 +175,8 @@ class json_5_0(cve):
     def metrics(self):
         metrics = []
         metric = {}
-        if "cvssv4_vec" in self.analysis_obj:
+        # print('analysis_obj 內容：' + str(self.analysis_obj))
+        if "cvssv4_vec" in self.analysis_obj and self.analysis_obj["cvssv4_vec"]:
             cvssVX_X = cve.cvss(self.analysis_obj["cvssv4_vec"], self.analysis_obj["cvssv4_score"])
         else:
             cvssVX_X = cve.cvss(self.analysis_obj["cvssv3_vec"], self.analysis_obj["cvssv3_score"])
