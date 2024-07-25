@@ -163,7 +163,8 @@ class cve:
                 ### read json file into dict
                 cve_dict = open_json(cve_json_file)
                 ### Check it CVE JSON changed
-                if "dataVersion" in cve_dict and (cve_dict["dataVersion"] == "5.0" or cve_dict["dataVersion"] == "5.1.0"):
+                print('檢查 cve_dict["dataVersion"]: ' + cve_dict["dataVersion"])
+                if "dataVersion" in cve_dict and cve_dict["dataVersion"].find("5.") >= 0:
                     from .json_5_0 import json_5_0
 
                     the_json_5_0 = json_5_0(

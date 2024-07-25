@@ -446,6 +446,25 @@ class ExtractCvssv4AttrTestCase(unittest.TestCase):
             and "P" == e
         )
 
+    def test_extract_cvssv4_attr_30(self):
+        av, ac, at, pr, ui, vc, vi, va, sc, si, sa, e = extract_cvssv4_attr(
+            "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:L/VA:N/SC:N/SI:L/SA:N-5.3"
+        )
+        self.assertTrue(
+            "N" == av
+            and "L" == ac
+            and "N" == at
+            and "L" == pr
+            and "N" == ui
+            and "N" == vc
+            and "L" == vi
+            and "N" == va
+            and "N" == sc
+            and "L" == si
+            and "N" == sa
+            and None == e
+        )
+
 
 class ExtractSaTitleTestCase(unittest.TestCase):
     def setUp(self):
