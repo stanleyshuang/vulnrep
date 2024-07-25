@@ -767,14 +767,14 @@ class cve:
         return str_remote_authenticated, str_vectors
 
     @staticmethod
-    def cvss(cvssv3_vec, cvssv3_score):
+    def cvss(cvss_vec, cvss_score):
         from pkg._qjira.description import extract_cvssv3_attr, extract_cvssv4_attr
 
         cvss = {}
-        if cvssv3_vec:
-            av, ac, pr, ui, s, c, i, a = extract_cvssv3_attr(cvssv3_vec)
+        if cvss_vec:
+            av, ac, pr, ui, s, c, i, a = extract_cvssv3_attr(cvss_vec)
             if av and ac:
-                cvss["vectorString"] = cvssv3_vec
+                cvss["vectorString"] = cvss_vec
                 cvss["version"] = "3.1"
 
                 if av == "N":
@@ -829,8 +829,8 @@ class cve:
                 else:
                     cvss["availabilityImpact"] = "NONE"
             else:
-                av, ac, at, pr, ui, vc, vi, va, sc, si, sa, e = extract_cvssv4_attr(cvssv3_vec)
-                cvss["vectorString"] = cvssv3_vec
+                av, ac, at, pr, ui, vc, vi, va, sc, si, sa, e = extract_cvssv4_attr(cvss_vec)
+                cvss["vectorString"] = cvss_vec
                 cvss["version"] = "4.0"
 
                 if av == "N":
@@ -917,8 +917,8 @@ class cve:
                 else:
                     cvss["exploitMaturity"] = "UNREPORTED"
 
-        if cvssv3_score:
-            base_score = float(cvssv3_score)
+        if cvss_score:
+            base_score = float(cvss_score)
             cvss["baseScore"] = base_score
             if base_score <= 10.0 and base_score >= 9.0:
                 cvss["baseSeverity"] = "CRITICAL"

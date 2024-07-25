@@ -31,12 +31,12 @@ class json_5_0(cve):
         else:
             cve_dict["containers"] = self.containers({})
         cve_dict["cveMetadata"]["cveId"] = self.filename
-        # 如果 CVSS 套用 4.0，dataVersion 要調整為 5.1.0
+        # 如果 CVSS 套用 4.0，dataVersion 要調整為 5.1
         if "metrics" in cve_dict["containers"]["cna"]:
             metrics = cve_dict["containers"]["cna"]["metrics"]
             for metric in metrics:
                 if "cvssV4_0" in metric:
-                    cve_dict["dataVersion"] = "5.1.0"
+                    cve_dict["dataVersion"] = "5.1"
                     break
         return cve_dict
 
@@ -175,9 +175,10 @@ class json_5_0(cve):
     def metrics(self):
         metrics = []
         metric = {}
-        cvssVX_X = cve.cvss(
-            self.analysis_obj["cvssv3_vec"], self.analysis_obj["cvssv3_score"]
-        )
+        if "cvssv4_vec" in self.analysis_obj:
+            cvssVX_X = cve.cvss(self.analysis_obj["cvssv4_vec"], self.analysis_obj["cvssv4_score"])
+        else:
+            cvssVX_X = cve.cvss(self.analysis_obj["cvssv3_vec"], self.analysis_obj["cvssv3_score"])
         if not bool(cvssVX_X):
             return None
 

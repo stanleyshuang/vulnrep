@@ -127,18 +127,20 @@ class analysis(permanent_obj):
     def cve_json_callback(the_obj, cid, author, time, line):
         b_updated = False
 
-        ### 解析 cweids, capecids, cvssv3_vec, cvssv3_score
+        ### 解析 cweids, capecids, cvssv_vec, cvssv_score
         cweids = extract_cweid(line)
         capecids = extract_capecid(line)
-        cvssv3_vec, cvssv3_score, b_40 = extract_cvss_score(line)
+        cvssv_vec, cvssv_score, b_40 = extract_cvss_score(line)
 
-        if cweids or capecids or cvssv3_vec or cvssv3_score:
+        if cweids or capecids or cvssv_vec or cvssv_score:
             if line.find("(EX)") >= 0 and the_obj._b_use_ex == False:
                 the_obj._b_use_ex = True
                 the_obj.json_obj.pop("cweids", None)
                 the_obj.json_obj.pop("capecids", None)
                 the_obj.json_obj.pop("cvssv3_vec", None)
+                the_obj.json_obj.pop("cvssv4_vec", None)
                 the_obj.json_obj.pop("cvssv3_score", None)
+                the_obj.json_obj.pop("cvssv4_score", None)
 
         if cweids:
             if "cweids" not in the_obj.json_obj:
@@ -158,14 +160,20 @@ class analysis(permanent_obj):
                     the_obj.json_obj["capecids"].append(capecid)
                     b_updated = True
 
-        if cvssv3_vec:
-            # print("CVSSv3.1: vectorString {cvssv3_vec}".format(cvssv3_vec=cvssv3_vec))
-            the_obj.json_obj["cvssv3_vec"] = cvssv3_vec
+        if cvssv_vec:
+            # print("CVSSv3.1: vectorString {cvssv_vec}".format(cvssv_vec=cvssv_vec))
+            if b_40:
+                the_obj.json_obj["cvssv4_vec"] = cvssv_vec
+            else:
+                the_obj.json_obj["cvssv3_vec"] = cvssv_vec
             b_updated = True
 
-        if cvssv3_score:
-            # print("CVSSv3.1: Score: {cvssv3_score}".format(cvssv3_score=cvssv3_score))
-            the_obj.json_obj["cvssv3_score"] = cvssv3_score
+        if cvssv_score:
+            # print("CVSSv3.1: Score: {cvssv_score}".format(cvssv_score=cvssv_score))
+            if b_40:
+                the_obj.json_obj["cvssv4_score"] = cvssv_score
+            else:
+                the_obj.json_obj["cvssv3_score"] = cvssv_score
             b_updated = True
 
         ### 解析 description, poc
@@ -324,8 +332,8 @@ class analysis(permanent_obj):
         # 否則如果沒有 CWE ID，CAPEC ID 或 CVSSv3，請分析師指派
         b_request_cwe = False
         b_request_capec = False
-        b_request_cvssv3_vec = False
-        b_request_cvssv3_score = False
+        b_request_cvssv_vec = False
+        b_request_cvssv_score = False
         b_request_quality_scores = {}
         if "cweids" not in self.json_obj or len(self.json_obj["cweids"]) == 0:
             b_request_cwe = True
@@ -337,11 +345,11 @@ class analysis(permanent_obj):
         for quality_key in quality_score_keys:
             if quality_key not in self.json_obj or not self.json_obj[quality_key]:
                 b_request_quality_scores[quality_key] = True
-        if "cvssv3_vec" not in self.json_obj:
-            b_request_cvssv3_vec = True
+        if "cvssv3_vec" not in self.json_obj and "cvssv4_vec" not in self.json_obj:
+            b_request_cvssv_vec = True
         """
-        if 'cvssv3_score' not in self.json_obj:
-            b_request_cvssv3_score = True
+        if 'cvssv_score' not in self.json_obj:
+            b_request_cvssv_score = True
         """
         quality_key_maps = {
             "description": "Content",
@@ -353,8 +361,8 @@ class analysis(permanent_obj):
             if (
                 b_request_cwe
                 or b_request_capec
-                or b_request_cvssv3_vec
-                or b_request_cvssv3_score
+                or b_request_cvssv_vec
+                or b_request_cvssv_score
                 or len(b_request_quality_scores) > 0
             ):
                 msg = "[~{author}]\n請協助提供以下資訊：\n".format(author=author)
@@ -362,9 +370,9 @@ class analysis(permanent_obj):
                     msg += "   - CWE ID(s)\n"
                 if b_request_capec:
                     msg += "   - CAPEC ID(s)\n"
-                if b_request_cvssv3_vec:
+                if b_request_cvssv_vec:
                     msg += "   - CVSS vector\n"
-                if b_request_cvssv3_score:
+                if b_request_cvssv_score:
                     msg += "   - CVSS score\n"
                 for quality_key in b_request_quality_scores:
                     msg += "   - {quality_key} score\n".format(
@@ -373,8 +381,8 @@ class analysis(permanent_obj):
                 if (
                     not b_request_cwe
                     and not b_request_capec
-                    and not b_request_cvssv3_vec
-                    and not b_request_cvssv3_score
+                    and not b_request_cvssv_vec
+                    and not b_request_cvssv_score
                 ):
                     # quality score 沒有沒關係
                     self.json_obj["b_done"] = True
@@ -435,7 +443,9 @@ class analysis(permanent_obj):
         # analysis_obj['cweids']
         # analysis_obj['capecids']
         # analysis_obj['cvssv3_vec']
+        # analysis_obj['cvssv4_vec']
         # analysis_obj['cvssv3_score']
+        # analysis_obj['cvssv4_score']
         # analysis_obj['extracted_cveid']
         # analysis_obj['summary']
         # analysis_obj['severity_level']
@@ -448,7 +458,9 @@ class analysis(permanent_obj):
         analysis_obj["cweids"] = None
         analysis_obj["capecids"] = None
         analysis_obj["cvssv3_vec"] = None
+        analysis_obj["cvssv4_vec"] = None
         analysis_obj["cvssv3_score"] = None
+        analysis_obj["cvssv4_score"] = None
         analysis_obj["extracted_cveid"] = None
         analysis_obj["summary"] = None
         analysis_obj["severity_level"] = None
@@ -463,8 +475,14 @@ class analysis(permanent_obj):
             if "cvssv3_vec" in self.json_obj:
                 analysis_obj["cvssv3_vec"] = self.json_obj["cvssv3_vec"]
 
+            if "cvssv4_vec" in self.json_obj:
+                analysis_obj["cvssv4_vec"] = self.json_obj["cvssv4_vec"]
+
             if "cvssv3_score" in self.json_obj:
                 analysis_obj["cvssv3_score"] = self.json_obj["cvssv3_score"]
+
+            if "cvssv4_score" in self.json_obj:
+                analysis_obj["cvssv4_score"] = self.json_obj["cvssv4_score"]
 
             if "cveid" in self.json_obj:
                 analysis_obj["extracted_cveid"] = self.json_obj["cveid"]
@@ -484,6 +502,8 @@ class analysis(permanent_obj):
             print("cveid: " + self.json_obj["cveid"])
         if "cvssv3_vec" in self.json_obj:
             print("cvssv3_vec: " + self.json_obj["cvssv3_vec"])
+        if "cvssv4_vec" in self.json_obj:
+            print("cvssv4_vec: " + self.json_obj["cvssv4_vec"])
         if "description" in self.json_obj:
             print("description score: " + str(self.json_obj["description"]))
         if "poc" in self.json_obj:
