@@ -1875,3 +1875,18 @@ class ParseStorePublishProcessQtsBuildTestCase(unittest.TestCase):
             and "3.3.x" == ver_begin
         )
 
+    def test_parse_store_publish_process_460(self):
+        product, platform, version, ver_begin = parse_store_publish_process(
+            "CAYINVDS-37",
+            "Video Station",
+            None,
+            "5.8.2",
+            filelink="\\\\172.17.25.251\\Daily_Build\\3rd-Party_QPKGs\\VideoStationPro\\5.8.2\\\nVideoStationPro_5.8.2_20240627.qpkg",
+        )
+        self.assertTrue(
+            "Video Station" == product
+            and "" == platform
+            and "5.8.2" == version
+            and "5.8.x" == ver_begin
+        )
+

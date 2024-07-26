@@ -72,9 +72,9 @@ class i_mail():
                 mail_tos=self.mail_tos,
                 subject=self.subject,
                 body=self.body))
-        # if socket.gethostname()=='Bifrost871':
+        if socket.gethostname()=='Bifrost871':
             # Log in to server using secure context and send email
             # smtp365.ieiworld.com: SNMP Server domain, 跟 IT 申請
-            # with smtplib.SMTP('smtp365.ieiworld.com', 25) as server:
-                # server.sendmail(self.mail_from, self.mail_tos, text)
+            with smtplib.SMTP('smtp365.ieiworld.com', 25) as server:
+                server.sendmail(self.mail_from, self.mail_tos, text)
 

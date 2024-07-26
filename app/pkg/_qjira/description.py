@@ -1992,8 +1992,20 @@ def parse_store_publish_process(
             version = m.group(1) + "." + m.group(2)
             version_begin = m.group(1) + ".x"
             return product, "", version, version_begin
+    elif key and "CAYINVDS" in key:
+        m = re.search(
+            r"VideoStationPro_(\d{1,2}\.\d{1,2})\.(\d{1,2}).\d{4}\d{2}\d{2}.qpkg",
+            filelink,
+        )
+        if m and m.group(1) and m.group(2):
+            product = model
+            platform = ""
+            version = m.group(1) + "." + m.group(2)
+            version_begin = m.group(1) + ".x"
+            return product, "", version, version_begin
 
     print("---     Store Publish Process - project {key} not found".format(key=key))
+    print("        parse_store_publish_process()")
     print("        model = {model}".format(model=str(model)))
     print("        platform = {platform}".format(platform=str(platform)))
     print("        ver_n_bld = {ver_n_bld}".format(ver_n_bld=str(ver_n_bld)))
