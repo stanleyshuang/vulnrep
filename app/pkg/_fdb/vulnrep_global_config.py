@@ -85,7 +85,7 @@ class vglobalconfig(permanent_obj):
         if assignee not in whole["analyst_job_count"]:
             whole["analyst_job_count"][assignee] = 0.0
         # job counts increased
-        whole["analyst_job_count"][assignee] += weight
+        whole["analyst_job_count"][assignee] = round(whole["analyst_job_count"][assignee] + weight, 1)
         self.flush("global")
 
     def find_owner(self, email):
