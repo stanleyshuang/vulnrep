@@ -93,9 +93,9 @@ class vfinding_response(permanent_obj):
         else:
             plan_2_disclose = ""
         if not b_request_info:
-            collect_personal_data = ""
+            collect_contact_data = ""
         else:
-            collect_personal_data = (
+            collect_contact_data = (
                 "\nTo maintain a long-term relationship with you, we kindly request that you share the following information with us:\n\n"
                 "1. Your full name\n"
                 "2. The name you prefer to be called on Security Advisory\n"
@@ -213,7 +213,7 @@ class vfinding_response(permanent_obj):
         mail_template = {
             "researcher_name": researcher_name,
             'vuln_analysis_statement': vuln_analysis_statement,
-            'collect_personal_data': collect_personal_data,
+            'collect_contact_data': collect_contact_data,
             'plan_2_disclose': plan_2_disclose,
             'outscope': outscope,
         }
