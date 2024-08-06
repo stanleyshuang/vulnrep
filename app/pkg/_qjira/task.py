@@ -64,6 +64,7 @@ class analysis_task(task):
         self.assignee = None
         self._b_all_fixed = False
         self._b_one_fixed = False
+        self._b_enhance = False
 
         self._cve_json_url = None
         self.sf_sub_report = None
@@ -634,6 +635,7 @@ class analysis_task(task):
 
     def trace_dependency(self):
         from .bug import vuln_bug
+        from .enhancement import vuln_enhancement
 
         if self.b_dependency_traced:
             return
@@ -663,7 +665,8 @@ class analysis_task(task):
                         blocked_task.update_labels("90day")
         else:
             self.search_blocked()
-            self.search_blocking()
+            # self.search_blocking()
+            self.search_causes()
             for blocked_issue in self.blocked_issues:
                 if get_issuetype(blocked_issue) == "Bug":
                     the_bug = vuln_bug(self.jira, blocked_issue, self.debug_obj)
@@ -672,7 +675,16 @@ class analysis_task(task):
                     ### 90-day policy labels
                     if b_90day and not the_bug.does_label_exist("90day"):
                         the_bug.update_labels("90day")
+            for causes_issue in self.causes_issues:
+                if get_issuetype(causes_issue) == "Enhancement":
+                    the_enhancement = vuln_enhancement(self.jira, causes_issue, self.debug_obj)
+                    self.dependent_counts += 1
+                    self.dependent_issues.append(the_enhancement)
+                    ### 90-day policy labels
+                    if b_90day and not the_bug.does_label_exist("90day"):
+                        the_enhancement.update_labels("90day")
 
+            '''
             for blocking_issue in self.blocking_issues:
                 if get_issuetype(blocking_issue) == "Bug":
                     the_bug = vuln_bug(self.jira, blocking_issue, self.debug_obj)
@@ -680,6 +692,7 @@ class analysis_task(task):
                     self.dependent_issues.append(the_bug)
                     if b_90day and not the_bug.does_label_exist("90day"):
                         the_bug.update_labels("90day")
+            '''
 
     def set_closed_date(self, data, downloads):
         # the_task_closed_date
@@ -981,6 +994,12 @@ class analysis_task(task):
                         release_dates.append(the_bug.release_date)
                     if b_update and self.does_component_exist("vulnerability_report"):
                         the_bug.add_component("vulnerability_report")
+                elif get_issuetype(issue.issue) == "Enhancement":
+                    self._b_one_fixed = True
+                    self._b_all_fixed = True
+                    self.b_dependency_resolved = True
+                    self._b_enhance = True
+                    self.debuglog_r('    偵測到 Enhancement issue')
 
             # fixing_date: bug created date
             bug_created = sorted(bug_created)
@@ -1054,6 +1073,9 @@ class analysis_task(task):
                     b_production_web_verified = True
                 if label in ["convert_to_requirement"]:
                     b_convert_to_requirement = True
+            
+            if self._b_enhance:
+                b_convert_to_requirement = True
 
             if self.get_status_name() in ["close"] and self.b_dependency_resolved:
                 self.b_resolved = True
