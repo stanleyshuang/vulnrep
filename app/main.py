@@ -1175,6 +1175,14 @@ class CommandHandler:
                     ### Update label 'responsed'
                     if not the_issue.does_label_exist("responsed"):
                         the_issue.update_labels("responsed")
+                    if the_issue.is_main_task():
+                        the_issue.search_blocked()
+                        for blocked_issue in the_issue.blocked_issues:
+                            if get_issuetype(blocked_issue) == "Task":
+                                blocked_task = analysis_task(the_issue.jira, blocked_issue, the_issue.debug_obj)
+                                if not blocked_task.does_label_exist("responsed"):
+                                    print("--- Label 子單: " + blocked_task.issue.key + " " + blocked_task.issue.fields.summary + " 已回應")
+                                    blocked_task.update_labels("responsed")
                 '''
                 if gpt_return:
                     self.subcmd = "gpt_summary"
