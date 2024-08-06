@@ -1000,6 +1000,8 @@ class analysis_task(task):
                     self.b_dependency_resolved = True
                     self._b_enhance = True
                     self.debuglog_r('    偵測到 Enhancement issue')
+                    if not self.does_label_exist("convert_to_requirement"):
+                        self.update_labels("convert_to_requirement")
 
             # fixing_date: bug created date
             bug_created = sorted(bug_created)
