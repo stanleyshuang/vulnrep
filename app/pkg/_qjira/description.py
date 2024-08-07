@@ -102,6 +102,8 @@ def extract_model(content):
             or token.lower().find("cloud web") >= 0
         ):  # QNAP Cloud Service
             return "qnap cloud service", token, cloudweb_version_begin(token)
+        elif token.lower().find("qnap store") >= 0:  # QNAP Store
+            return "qnap store", token, cloudweb_version_begin(token)
         elif token.lower().find("amiz") >= 0:  # Amiz Cloud
             return "amiz", token, cloudweb_version_begin(token)
         elif token.lower().find("qpkg:") >= 0:  # QPKG

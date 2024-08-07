@@ -105,6 +105,26 @@ class ExtractModelTestCase(unittest.TestCase):
             and "n/a" == ver_begin
         )
 
+    def test_extract_model_21(self):
+        cat, product, ver_begin = extract_model(
+            "[QNAP Store][Security][Medium][V3] Exposure of Sensitive Information in doc.alpha.qmiix.com - CVE-2017-5487 (Prajit Sindhkar)"
+        )
+        self.assertTrue(
+            "qnap store" == cat
+            and "QNAP Store" == product
+            and "n/a" == ver_begin
+        )
+
+    def test_extract_model_22(self):
+        cat, product, ver_begin = extract_model(
+            "[AMIZ Cloud][Security][Medium][V3] Exposure of Sensitive Information in doc.alpha.qmiix.com - CVE-2017-5487 (Prajit Sindhkar)"
+        )
+        self.assertTrue(
+            "amiz" == cat
+            and "AMIZ Cloud" == product
+            and "n/a" == ver_begin
+        )
+
     def test_extract_model_30(self):
         cat, product, ver_begin = extract_model(
             "[Q-202204-00401][INTSI000-3257][Windows Utility:QENC Decrypter Windows][Security][Medium][V3] Out-of-bounds Write in QENCDecrypter (RunZi Zhao) - CVE-2022-27590"

@@ -386,6 +386,14 @@ class analysis_task(task):
                             assignee=assignee
                         ),
                     )
+                elif model == "qnap store":
+                    assignee = "KevinLiao@qnap.com"
+                    self.jira.add_comment(
+                        self.issue,
+                        "[~{assignee}],\n請協助此弱點分析，並建議修復與驗證方法，謝謝。".format(
+                            assignee=assignee
+                        ),
+                    )
                 elif model == "quwan":
                     assignee = "JocephWang@qnap.com"
                     analysis_task.add_watchers(

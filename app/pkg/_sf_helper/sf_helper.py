@@ -126,6 +126,7 @@ def create_case(
         "iei": "[IEI Website]",
         "quwan": "[QuWAN]",
         "amiz": "[AMIZ Cloud]",
+        "store": "[QNAP Store]",
     }
 
     # 確認產品名稱（版本）

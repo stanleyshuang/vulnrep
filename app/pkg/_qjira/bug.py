@@ -472,7 +472,9 @@ class vuln_bug(i_bug):
                 # 已達 resolved 的 jira
                 the_time, str_time = self.get_time_n_str(str_long_time)
                 model, product, ver = extract_model(self.issue.fields.summary)
-                if self.issue.fields.summary.lower().find("[qnap cloud service]") < 0:
+                if self.issue.fields.summary.lower().find("[qnap cloud service]") < 0 and \
+                   self.issue.fields.summary.lower().find("[amiz cloud]") < 0 and \
+                   self.issue.fields.summary.lower().find("[qnap store]") < 0:
                     # 非 cloud team jira 狀態達 resolved
                     self._b_fix_status = "fixed"
                     self.debuglog_r(
